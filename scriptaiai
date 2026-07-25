@@ -1,71 +1,81 @@
--- ============================================
--- ROBLOX SCRIPT EXECUTOR (LocalScript)
--- Toggle menu bằng nút ⚙, nhập tên + code, chạy code (cần executor hỗ trợ loadstring)
--- ============================================
+-- ===================================================
+-- EXECUTOR MENU - Giao diện đẹp + Chức năng đầy đủ
+-- Đặt trong StarterGui -> LocalScript
+-- ===================================================
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
+-- Tạo ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ExecutorMenu"
 screenGui.Parent = playerGui
 
 -- ====================
--- NÚT TOGGLE (ẩn/hiện menu)
+-- NÚT TOGGLE (góc dưới phải)
 -- ====================
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 45, 0, 45)
-toggleButton.Position = UDim2.new(1, -55, 1, -55)  -- góc dưới phải
+toggleButton.Position = UDim2.new(1, -55, 1, -55)
 toggleButton.Text = "⚙"
-toggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 toggleButton.Font = Enum.Font.SourceSansBold
-toggleButton.TextSize = 28
+toggleButton.TextSize = 24
 toggleButton.BorderSizePixel = 0
 toggleButton.Parent = screenGui
 
 local toggleCorner = Instance.new("UICorner")
-toggleCorner.CornerRadius = UDim.new(1, 0)  -- tròn
+toggleCorner.CornerRadius = UDim.new(1, 0)
 toggleCorner.Parent = toggleButton
 
+local toggleStroke = Instance.new("UIStroke")
+toggleStroke.Thickness = 2
+toggleStroke.Color = Color3.fromRGB(100, 100, 100)
+toggleStroke.Parent = toggleButton
+
 toggleButton.MouseEnter:Connect(function()
-	toggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+	toggleButton.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 end)
 toggleButton.MouseLeave:Connect(function()
-	toggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+	toggleButton.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 end)
 
 -- ====================
 -- MENU CHÍNH
 -- ====================
 local mainFrame = Instance.new("Frame")
-mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 340, 0, 300)
 mainFrame.Position = UDim2.new(0.5, -170, 0.5, -150)
-mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
 mainFrame.Parent = screenGui
 
 local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 8)
+mainCorner.CornerRadius = UDim.new(0, 10)
 mainCorner.Parent = mainFrame
+
+local mainStroke = Instance.new("UIStroke")
+mainStroke.Thickness = 1.5
+mainStroke.Color = Color3.fromRGB(60, 60, 60)
+mainStroke.Parent = mainFrame
 
 -- Thanh tiêu đề
 local titleBar = Instance.new("Frame")
-titleBar.Size = UDim2.new(1, 0, 0, 30)
-titleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+titleBar.Size = UDim2.new(1, 0, 0, 32)
+titleBar.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 titleBar.BorderSizePixel = 0
 titleBar.Parent = mainFrame
 
 local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.CornerRadius = UDim.new(0, 10)
 titleCorner.Parent = titleBar
 
 local titleLabel = Instance.new("TextLabel")
-titleLabel.Size = UDim2.new(1, -30, 1, 0)
-titleLabel.Position = UDim2.new(0, 10, 0, 0)
-titleLabel.Text = "⚡ Script Executor"
+titleLabel.Size = UDim2.new(1, -40, 1, 0)
+titleLabel.Position = UDim2.new(0, 15, 0, 0)
+titleLabel.Text = "⚡ Executor"
 titleLabel.BackgroundTransparency = 1
 titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 titleLabel.Font = Enum.Font.SourceSansBold
@@ -74,38 +84,41 @@ titleLabel.TextXAlignment = Enum.TextXAlignment.Left
 titleLabel.Parent = titleBar
 
 local closeButton = Instance.new("TextButton")
-closeButton.Size = UDim2.new(0, 30, 0, 30)
-closeButton.Position = UDim2.new(1, -30, 0, 0)
+closeButton.Size = UDim2.new(0, 32, 0, 32)
+closeButton.Position = UDim2.new(1, -32, 0, 0)
 closeButton.Text = "✕"
-closeButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
-closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.BackgroundTransparency = 1
+closeButton.TextColor3 = Color3.fromRGB(200, 200, 200)
 closeButton.Font = Enum.Font.SourceSansBold
 closeButton.TextSize = 16
 closeButton.BorderSizePixel = 0
 closeButton.Parent = titleBar
 
-local closeCorner = Instance.new("UICorner")
-closeCorner.CornerRadius = UDim.new(0, 4)
-closeCorner.Parent = closeButton
+closeButton.MouseEnter:Connect(function()
+	closeButton.TextColor3 = Color3.fromRGB(255, 80, 80)
+end)
+closeButton.MouseLeave:Connect(function()
+	closeButton.TextColor3 = Color3.fromRGB(200, 200, 200)
+end)
 
 -- Ô nhập TÊN
 local nameLabel = Instance.new("TextLabel")
-nameLabel.Size = UDim2.new(1, -20, 0, 20)
-nameLabel.Position = UDim2.new(0, 10, 0, 40)
-nameLabel.Text = "👤 Tên của bạn"
+nameLabel.Size = UDim2.new(1, -20, 0, 18)
+nameLabel.Position = UDim2.new(0, 10, 0, 42)
+nameLabel.Text = "👤 Tên"
 nameLabel.BackgroundTransparency = 1
-nameLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+nameLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 nameLabel.Font = Enum.Font.SourceSans
-nameLabel.TextSize = 14
+nameLabel.TextSize = 13
 nameLabel.TextXAlignment = Enum.TextXAlignment.Left
 nameLabel.Parent = mainFrame
 
 local nameBox = Instance.new("TextBox")
-nameBox.Size = UDim2.new(1, -20, 0, 30)
-nameBox.Position = UDim2.new(0, 10, 0, 60)
+nameBox.Size = UDim2.new(1, -20, 0, 28)
+nameBox.Position = UDim2.new(0, 10, 0, 62)
 nameBox.PlaceholderText = "Nhập tên..."
 nameBox.Text = ""
-nameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+nameBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 nameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 nameBox.Font = Enum.Font.SourceSans
 nameBox.TextSize = 14
@@ -113,28 +126,33 @@ nameBox.BorderSizePixel = 0
 nameBox.Parent = mainFrame
 
 local nameCorner = Instance.new("UICorner")
-nameCorner.CornerRadius = UDim.new(0, 4)
+nameCorner.CornerRadius = UDim.new(0, 5)
 nameCorner.Parent = nameBox
+
+local nameStroke = Instance.new("UIStroke")
+nameStroke.Thickness = 1
+nameStroke.Color = Color3.fromRGB(80, 80, 80)
+nameStroke.Parent = nameBox
 
 -- Ô nhập CODE
 local codeLabel = Instance.new("TextLabel")
-codeLabel.Size = UDim2.new(1, -20, 0, 20)
+codeLabel.Size = UDim2.new(1, -20, 0, 18)
 codeLabel.Position = UDim2.new(0, 10, 0, 100)
-codeLabel.Text = "💻 Code (Lua script)"
+codeLabel.Text = "💻 Code (Lua)"
 codeLabel.BackgroundTransparency = 1
-codeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+codeLabel.TextColor3 = Color3.fromRGB(180, 180, 180)
 codeLabel.Font = Enum.Font.SourceSans
-codeLabel.TextSize = 14
+codeLabel.TextSize = 13
 codeLabel.TextXAlignment = Enum.TextXAlignment.Left
 codeLabel.Parent = mainFrame
 
 local codeBox = Instance.new("TextBox")
-codeBox.Size = UDim2.new(1, -20, 0, 100)
+codeBox.Size = UDim2.new(1, -20, 0, 110)
 codeBox.Position = UDim2.new(0, 10, 0, 120)
-codeBox.PlaceholderText = "print('Hello World!')"
+codeBox.PlaceholderText = "print('Hello!')"
 codeBox.Text = ""
 codeBox.MultiLine = true
-codeBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+codeBox.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 codeBox.TextColor3 = Color3.fromRGB(255, 255, 255)
 codeBox.Font = Enum.Font.SourceSans
 codeBox.TextSize = 14
@@ -145,18 +163,23 @@ codeBox.BorderSizePixel = 0
 codeBox.Parent = mainFrame
 
 local codeCorner = Instance.new("UICorner")
-codeCorner.CornerRadius = UDim.new(0, 4)
+codeCorner.CornerRadius = UDim.new(0, 5)
 codeCorner.Parent = codeBox
+
+local codeStroke = Instance.new("UIStroke")
+codeStroke.Thickness = 1
+codeStroke.Color = Color3.fromRGB(80, 80, 80)
+codeStroke.Parent = codeBox
 
 -- Nút CHẠY CODE
 local runButton = Instance.new("TextButton")
-runButton.Size = UDim2.new(0, 120, 0, 32)
-runButton.Position = UDim2.new(0.5, -60, 0, 230)
+runButton.Size = UDim2.new(0, 120, 0, 30)
+runButton.Position = UDim2.new(0.5, -60, 0, 240)
 runButton.Text = "▶ Chạy Code"
-runButton.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+runButton.BackgroundColor3 = Color3.fromRGB(0, 160, 100)
 runButton.TextColor3 = Color3.fromRGB(255, 255, 255)
 runButton.Font = Enum.Font.SourceSansBold
-runButton.TextSize = 15
+runButton.TextSize = 14
 runButton.BorderSizePixel = 0
 runButton.Parent = mainFrame
 
@@ -164,20 +187,25 @@ local runCorner = Instance.new("UICorner")
 runCorner.CornerRadius = UDim.new(0, 6)
 runCorner.Parent = runButton
 
+local runStroke = Instance.new("UIStroke")
+runStroke.Thickness = 1
+runStroke.Color = Color3.fromRGB(0, 200, 130)
+runStroke.Parent = runButton
+
 runButton.MouseEnter:Connect(function()
-	runButton.BackgroundColor3 = Color3.fromRGB(0, 200, 120)
+	runButton.BackgroundColor3 = Color3.fromRGB(0, 190, 120)
 end)
 runButton.MouseLeave:Connect(function()
-	runButton.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+	runButton.BackgroundColor3 = Color3.fromRGB(0, 160, 100)
 end)
 
 -- Label trạng thái
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 20)
-statusLabel.Position = UDim2.new(0, 10, 0, 270)
+statusLabel.Position = UDim2.new(0, 10, 0, 275)
 statusLabel.Text = ""
 statusLabel.BackgroundTransparency = 1
-statusLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+statusLabel.TextColor3 = Color3.fromRGB(255, 255, 120)
 statusLabel.Font = Enum.Font.SourceSans
 statusLabel.TextSize = 12
 statusLabel.TextWrapped = true
@@ -186,25 +214,25 @@ statusLabel.Parent = mainFrame
 -- ====================
 -- XỬ LÝ ẨN / HIỆN MENU
 -- ====================
-local menuOpen = false
-local function setMenuState(state)
-	menuOpen = state
+local isMenuOpen = false
+
+local function setMenuOpen(state)
+	isMenuOpen = state
 	mainFrame.Visible = state
 	toggleButton.Text = state and "✕" or "⚙"
 end
 
 toggleButton.MouseButton1Click:Connect(function()
-	setMenuState(not menuOpen)
+	setMenuOpen(not isMenuOpen)
 end)
 
 closeButton.MouseButton1Click:Connect(function()
-	setMenuState(false)
+	setMenuOpen(false)
 end)
 
 -- ====================
--- KÉO THẢ MENU (đã sửa lỗi)
+-- KÉO THẢ MENU (bằng thanh tiêu đề)
 -- ====================
-local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStartPos = nil
 local frameStartPos = nil
@@ -238,29 +266,29 @@ end)
 -- ====================
 runButton.MouseButton1Click:Connect(function()
 	local code = codeBox.Text
-	if code == "" then
+	if code:match("^%s*$") then
 		statusLabel.Text = "⚠️ Vui lòng nhập code!"
 		return
 	end
 
-	-- Kiểm tra xem loadstring có tồn tại không (chỉ có trong executor bên thứ ba)
+	-- Kiểm tra loadstring (chỉ có trong executor)
 	if not loadstring then
-		statusLabel.Text = "❌ loadstring không được hỗ trợ trong Roblox thông thường."
+		statusLabel.Text = "❌ Cần executor (loadstring không có)"
 		return
 	end
 
-	local fn, err = loadstring(code)
+	local fn, syntaxErr = loadstring(code)
 	if not fn then
-		statusLabel.Text = "❌ Lỗi cú pháp: " .. tostring(err)
+		statusLabel.Text = "❌ Lỗi cú pháp: " .. tostring(syntaxErr)
 		return
 	end
 
 	local success, result = pcall(fn)
 	if success then
-		statusLabel.Text = "✅ Thực thi thành công! (xem Output)"
-		print("✅ Executed:", result)
+		statusLabel.Text = "✅ Đã chạy! (Xem Output)"
+		print("✅ [Executor] Output:", result)
 	else
-		statusLabel.Text = "❌ Lỗi thực thi: " .. tostring(result)
-		warn("❌ Error:", result)
+		statusLabel.Text = "❌ Lỗi runtime: " .. tostring(result)
+		warn("❌ [Executor] Runtime Error:", result)
 	end
 end)
