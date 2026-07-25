@@ -1,0 +1,267 @@
+-- ============================================
+-- MENU EXECUTOR by Vietnamese Developer
+-- Toggle bằng nút nhỏ góc phải, Run Code bằng loadstring
+-- ============================================
+
+local player = game.Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Tạo ScreenGui
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "ExecutorMenu"
+screenGui.Parent = playerGui
+
+-- ====================
+-- NÚT TOGGLE (ẩn/hiện menu)
+-- ====================
+local toggleButton = Instance.new("TextButton")
+toggleButton.Size = UDim2.new(0, 45, 0, 45)
+toggleButton.Position = UDim2.new(1, -55, 1, -55)  -- góc dưới phải
+toggleButton.Text = "⚙"
+toggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+toggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+toggleButton.Font = Enum.Font.SourceSansBold
+toggleButton.TextSize = 28
+toggleButton.BorderSizePixel = 0
+toggleButton.Parent = screenGui
+
+-- Bo góc cho nút toggle
+local toggleCorner = Instance.new("UICorner")
+toggleCorner.CornerRadius = UDim.new(1, 0)  -- tròn hoàn toàn
+toggleCorner.Parent = toggleButton
+
+-- Hiệu ứng hover cho nút toggle
+toggleButton.MouseEnter:Connect(function()
+	toggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
+end)
+toggleButton.MouseLeave:Connect(function()
+	toggleButton.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+end)
+
+-- ====================
+-- MENU CHÍNH
+-- ====================
+local mainFrame = Instance.new("Frame")
+mainFrame.Name = "MainFrame"
+mainFrame.Size = UDim2.new(0, 340, 0, 300)
+mainFrame.Position = UDim2.new(0.5, -170, 0.5, -150)  -- giữa màn hình
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+mainFrame.BorderSizePixel = 0
+mainFrame.Visible = false
+mainFrame.Parent = screenGui
+
+local mainCorner = Instance.new("UICorner")
+mainCorner.CornerRadius = UDim.new(0, 8)
+mainCorner.Parent = mainFrame
+
+-- Thanh tiêu đề (có nút đóng)
+local titleBar = Instance.new("Frame")
+titleBar.Size = UDim2.new(1, 0, 0, 30)
+titleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+titleBar.BorderSizePixel = 0
+titleBar.Parent = mainFrame
+
+local titleCorner = Instance.new("UICorner")
+titleCorner.CornerRadius = UDim.new(0, 8)
+titleCorner.Parent = titleBar
+
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, -30, 1, 0)
+titleLabel.Position = UDim2.new(0, 10, 0, 0)
+titleLabel.Text = "⚡ Script Executor"
+titleLabel.BackgroundTransparency = 1
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.Font = Enum.Font.SourceSansBold
+titleLabel.TextSize = 16
+titleLabel.TextXAlignment = Enum.TextXAlignment.Left
+titleLabel.Parent = titleBar
+
+local closeButton = Instance.new("TextButton")
+closeButton.Size = UDim2.new(0, 30, 0, 30)
+closeButton.Position = UDim2.new(1, -30, 0, 0)
+closeButton.Text = "✕"
+closeButton.BackgroundColor3 = Color3.fromRGB(255, 80, 80)
+closeButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+closeButton.Font = Enum.Font.SourceSansBold
+closeButton.TextSize = 16
+closeButton.BorderSizePixel = 0
+closeButton.Parent = titleBar
+
+local closeCorner = Instance.new("UICorner")
+closeCorner.CornerRadius = UDim.new(0, 4)
+closeCorner.Parent = closeButton
+
+-- Ô nhập TÊN
+local nameLabel = Instance.new("TextLabel")
+nameLabel.Size = UDim2.new(1, -20, 0, 20)
+nameLabel.Position = UDim2.new(0, 10, 0, 40)
+nameLabel.Text = "👤 Tên của bạn"
+nameLabel.BackgroundTransparency = 1
+nameLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+nameLabel.Font = Enum.Font.SourceSans
+nameLabel.TextSize = 14
+nameLabel.TextXAlignment = Enum.TextXAlignment.Left
+nameLabel.Parent = mainFrame
+
+local nameBox = Instance.new("TextBox")
+nameBox.Size = UDim2.new(1, -20, 0, 30)
+nameBox.Position = UDim2.new(0, 10, 0, 60)
+nameBox.PlaceholderText = "Nhập tên..."
+nameBox.Text = ""
+nameBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+nameBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+nameBox.Font = Enum.Font.SourceSans
+nameBox.TextSize = 14
+nameBox.BorderSizePixel = 0
+nameBox.Parent = mainFrame
+
+local nameCorner = Instance.new("UICorner")
+nameCorner.CornerRadius = UDim.new(0, 4)
+nameCorner.Parent = nameBox
+
+-- Ô nhập CODE
+local codeLabel = Instance.new("TextLabel")
+codeLabel.Size = UDim2.new(1, -20, 0, 20)
+codeLabel.Position = UDim2.new(0, 10, 0, 100)
+codeLabel.Text = "💻 Code (Lua script)"
+codeLabel.BackgroundTransparency = 1
+codeLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+codeLabel.Font = Enum.Font.SourceSans
+codeLabel.TextSize = 14
+codeLabel.TextXAlignment = Enum.TextXAlignment.Left
+codeLabel.Parent = mainFrame
+
+local codeBox = Instance.new("TextBox")
+codeBox.Size = UDim2.new(1, -20, 0, 100)
+codeBox.Position = UDim2.new(0, 10, 0, 120)
+codeBox.PlaceholderText = "print('Hello World!')"
+codeBox.Text = ""
+codeBox.MultiLine = true
+codeBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+codeBox.TextColor3 = Color3.fromRGB(255, 255, 255)
+codeBox.Font = Enum.Font.SourceSans
+codeBox.TextSize = 14
+codeBox.TextWrapped = true
+codeBox.TextXAlignment = Enum.TextXAlignment.Left
+codeBox.TextYAlignment = Enum.TextYAlignment.Top
+codeBox.BorderSizePixel = 0
+codeBox.Parent = mainFrame
+
+local codeCorner = Instance.new("UICorner")
+codeCorner.CornerRadius = UDim.new(0, 4)
+codeCorner.Parent = codeBox
+
+-- Nút CHẠY CODE
+local runButton = Instance.new("TextButton")
+runButton.Size = UDim2.new(0, 120, 0, 32)
+runButton.Position = UDim2.new(0.5, -60, 0, 230)
+runButton.Text = "▶ Chạy Code"
+runButton.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+runButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+runButton.Font = Enum.Font.SourceSansBold
+runButton.TextSize = 15
+runButton.BorderSizePixel = 0
+runButton.Parent = mainFrame
+
+local runCorner = Instance.new("UICorner")
+runCorner.CornerRadius = UDim.new(0, 6)
+runCorner.Parent = runButton
+
+-- Hiệu ứng hover nút Run
+runButton.MouseEnter:Connect(function()
+	runButton.BackgroundColor3 = Color3.fromRGB(0, 200, 120)
+end)
+runButton.MouseLeave:Connect(function()
+	runButton.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
+end)
+
+-- Label hiển thị kết quả/thông báo nhỏ
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Size = UDim2.new(1, -20, 0, 20)
+statusLabel.Position = UDim2.new(0, 10, 0, 270)
+statusLabel.Text = ""
+statusLabel.BackgroundTransparency = 1
+statusLabel.TextColor3 = Color3.fromRGB(255, 255, 100)
+statusLabel.Font = Enum.Font.SourceSans
+statusLabel.TextSize = 12
+statusLabel.TextWrapped = true
+statusLabel.Parent = mainFrame
+
+-- ===================================
+-- LOGIC XỬ LÝ
+-- ===================================
+
+-- Hàm ẩn/hiện menu
+local function toggleMenu()
+	mainFrame.Visible = not mainFrame.Visible
+	if mainFrame.Visible then
+		toggleButton.Text = "✕"  -- đổi sang dấu X khi menu mở
+	else
+		toggleButton.Text = "⚙"
+	end
+end
+
+-- Gán sự kiện cho nút toggle và nút đóng
+toggleButton.MouseButton1Click:Connect(toggleMenu)
+closeButton.MouseButton1Click:Connect(toggleMenu)
+
+-- Hàm thực thi code (có kiểm tra loadstring)
+local function executeCode()
+	local code = codeBox.Text
+	if code == "" then
+		statusLabel.Text = "⚠️ Vui lòng nhập code!"
+		return
+	end
+
+	-- Kiểm tra loadstring có khả dụng không
+	if not loadstring then
+		statusLabel.Text = "❌ loadstring không được hỗ trợ trong môi trường này."
+		return
+	end
+
+	local fn, err = loadstring(code)
+	if not fn then
+		statusLabel.Text = "❌ Lỗi cú pháp: " .. tostring(err)
+		return
+	end
+
+	-- Chạy code trong môi trường an toàn (pcall)
+	local success, result = pcall(fn)
+	if success then
+		statusLabel.Text = "✅ Thực thi thành công!"
+		print("✅ Code executed successfully", result)  -- in ra Output (F9)
+	else
+		statusLabel.Text = "❌ Lỗi thực thi: " .. tostring(result)
+		warn("❌ Execution error: ", result)
+	end
+end
+
+runButton.MouseButton1Click:Connect(executeCode)
+
+-- Cho phép kéo thả menu (tùy chọn, không yêu cầu nhưng thêm cho đẹp)
+local UserInputService = game:GetService("UserInputService")
+local dragging = false
+local dragStartPos = nil
+local frameStartPos = nil
+
+titleBar.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStartPos = input.Position
+		frameStartPos = mainFrame.Position
+		input.Draggable = true  -- có thể dùng Draggable nhưng ta tự code để mượt hơn
+	end
+end)
+
+titleBar.InputChanged:Connect(function(input)
+	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+		local delta = input.Position - dragStartPos
+		mainFrame.Position = UDim2.new(frameStartPos.X.Scale, frameStartPos.X.Offset + delta.X, frameStartPos.Y.Scale, frameStartPos.Y.Offset + delta.Y)
+	end
+end)
+
+titleBar.InputEnded:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = false
+	end
+end)
