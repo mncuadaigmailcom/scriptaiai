@@ -1,6 +1,5 @@
 -- ============================================
--- EXECUTOR MENU (Stable & Compatible)
--- Đặt trong StarterGui -> LocalScript
+-- EXECUTOR MENU (Đã tối ưu)
 -- ============================================
 
 local player = game.Players.LocalPlayer
@@ -10,9 +9,9 @@ local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ExecutorMenu"
 screenGui.Parent = playerGui
 
--- ====================
--- NÚT TOGGLE (góc phải dưới)
--- ====================
+print("✅ Script executor đã chạy.")
+
+-- Nút toggle
 local toggleButton = Instance.new("TextButton")
 toggleButton.Size = UDim2.new(0, 45, 0, 45)
 toggleButton.Position = UDim2.new(1, -55, 1, -55)
@@ -23,12 +22,8 @@ toggleButton.Font = Enum.Font.SourceSansBold
 toggleButton.TextSize = 24
 toggleButton.BorderSizePixel = 0
 toggleButton.Parent = screenGui
+Instance.new("UICorner", toggleButton).CornerRadius = UDim.new(1, 0)
 
-local toggleCorner = Instance.new("UICorner")
-toggleCorner.CornerRadius = UDim.new(1, 0)
-toggleCorner.Parent = toggleButton
-
--- Hiệu ứng hover đơn giản
 toggleButton.MouseEnter:Connect(function()
 	toggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 end)
@@ -36,47 +31,35 @@ toggleButton.MouseLeave:Connect(function()
 	toggleButton.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
 end)
 
--- ====================
--- KHUNG CHÍNH (Menu)
--- ====================
+-- Khung chính
 local mainFrame = Instance.new("Frame")
 mainFrame.Size = UDim2.new(0, 340, 0, 300)
 mainFrame.Position = UDim2.new(0.5, -170, 0.5, -150)
 mainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 mainFrame.BorderSizePixel = 0
-mainFrame.Visible = false  -- ẩn ban đầu
+mainFrame.Visible = false
 mainFrame.Parent = screenGui
+Instance.new("UICorner", mainFrame).CornerRadius = UDim.new(0, 10)
 
-local mainCorner = Instance.new("UICorner")
-mainCorner.CornerRadius = UDim.new(0, 10)
-mainCorner.Parent = mainFrame
-
--- Viền giả (dùng Frame bọc ngoài)
+-- Viền giả (nếu muốn giữ lại)
 local borderFrame = Instance.new("Frame")
 borderFrame.Size = UDim2.new(1, 2, 1, 2)
 borderFrame.Position = UDim2.new(0, -1, 0, -1)
 borderFrame.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
 borderFrame.BorderSizePixel = 0
 borderFrame.Parent = mainFrame
+Instance.new("UICorner", borderFrame).CornerRadius = UDim.new(0, 10)
 
-local borderCorner = Instance.new("UICorner")
-borderCorner.CornerRadius = UDim.new(0, 10)
-borderCorner.Parent = borderFrame
-
--- Đặt lại ZIndex để viền nằm dưới
-borderFrame.ZIndex = 1
-mainFrame.ZIndex = 2
-
--- Thanh tiêu đề
+-- Thanh tiêu đề (có thể kéo thả)
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 30)
 titleBar.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 titleBar.BorderSizePixel = 0
 titleBar.Parent = mainFrame
+Instance.new("UICorner", titleBar).CornerRadius = UDim.new(0, 10)
 
-local titleCorner = Instance.new("UICorner")
-titleCorner.CornerRadius = UDim.new(0, 10)
-titleCorner.Parent = titleBar
+-- Cho phép kéo menu bằng Draggable (xoá code kéo thủ công)
+titleBar.Draggable = true
 
 local titleLabel = Instance.new("TextLabel")
 titleLabel.Size = UDim2.new(1, -40, 1, 0)
@@ -107,7 +90,7 @@ closeButton.MouseLeave:Connect(function()
 	closeButton.TextColor3 = Color3.fromRGB(200, 200, 200)
 end)
 
--- Ô nhập TÊN
+-- Ô nhập tên
 local nameLabel = Instance.new("TextLabel")
 nameLabel.Size = UDim2.new(1, -20, 0, 18)
 nameLabel.Position = UDim2.new(0, 10, 0, 40)
@@ -130,12 +113,9 @@ nameBox.Font = Enum.Font.SourceSans
 nameBox.TextSize = 14
 nameBox.BorderSizePixel = 0
 nameBox.Parent = mainFrame
+Instance.new("UICorner", nameBox).CornerRadius = UDim.new(0, 5)
 
-local nameCorner = Instance.new("UICorner")
-nameCorner.CornerRadius = UDim.new(0, 5)
-nameCorner.Parent = nameBox
-
--- Ô nhập CODE
+-- Ô nhập code
 local codeLabel = Instance.new("TextLabel")
 codeLabel.Size = UDim2.new(1, -20, 0, 18)
 codeLabel.Position = UDim2.new(0, 10, 0, 98)
@@ -162,12 +142,9 @@ codeBox.TextXAlignment = Enum.TextXAlignment.Left
 codeBox.TextYAlignment = Enum.TextYAlignment.Top
 codeBox.BorderSizePixel = 0
 codeBox.Parent = mainFrame
+Instance.new("UICorner", codeBox).CornerRadius = UDim.new(0, 5)
 
-local codeCorner = Instance.new("UICorner")
-codeCorner.CornerRadius = UDim.new(0, 5)
-codeCorner.Parent = codeBox
-
--- Nút CHẠY CODE
+-- Nút chạy code
 local runButton = Instance.new("TextButton")
 runButton.Size = UDim2.new(0, 120, 0, 30)
 runButton.Position = UDim2.new(0.5, -60, 0, 240)
@@ -178,10 +155,7 @@ runButton.Font = Enum.Font.SourceSansBold
 runButton.TextSize = 14
 runButton.BorderSizePixel = 0
 runButton.Parent = mainFrame
-
-local runCorner = Instance.new("UICorner")
-runCorner.CornerRadius = UDim.new(0, 6)
-runCorner.Parent = runButton
+Instance.new("UICorner", runButton).CornerRadius = UDim.new(0, 6)
 
 runButton.MouseEnter:Connect(function()
 	runButton.BackgroundColor3 = Color3.fromRGB(0, 180, 110)
@@ -190,7 +164,6 @@ runButton.MouseLeave:Connect(function()
 	runButton.BackgroundColor3 = Color3.fromRGB(0, 150, 90)
 end)
 
--- Label trạng thái
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 20)
 statusLabel.Position = UDim2.new(0, 10, 0, 275)
@@ -202,11 +175,8 @@ statusLabel.TextSize = 12
 statusLabel.TextWrapped = true
 statusLabel.Parent = mainFrame
 
--- ====================
--- LOGIC ẨN/HIỆN MENU
--- ====================
+-- Logic ẩn/hiện
 local menuVisible = false
-
 local function setMenuVisible(state)
 	menuVisible = state
 	mainFrame.Visible = state
@@ -216,48 +186,11 @@ end
 toggleButton.MouseButton1Click:Connect(function()
 	setMenuVisible(not menuVisible)
 end)
-
 closeButton.MouseButton1Click:Connect(function()
 	setMenuVisible(false)
 end)
 
--- ====================
--- KÉO THẢ MENU (đơn giản, dùng Mouse)
--- ====================
-local UserInputService = game:GetService("UserInputService")
-local dragging = false
-local dragStartPos = nil
-local frameStartPos = nil
-
-titleBar.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStartPos = input.Position
-		frameStartPos = mainFrame.Position
-	end
-end)
-
-titleBar.InputChanged:Connect(function(input)
-	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-		local delta = input.Position - dragStartPos
-		mainFrame.Position = UDim2.new(
-			frameStartPos.X.Scale,
-			frameStartPos.X.Offset + delta.X,
-			frameStartPos.Y.Scale,
-			frameStartPos.Y.Offset + delta.Y
-		)
-	end
-end)
-
-titleBar.InputEnded:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = false
-	end
-end)
-
--- ====================
--- CHẠY CODE (có kiểm tra loadstring)
--- ====================
+-- Chạy code
 runButton.MouseButton1Click:Connect(function()
 	local code = codeBox.Text
 	local name = nameBox.Text
@@ -267,30 +200,27 @@ runButton.MouseButton1Click:Connect(function()
 		return
 	end
 
-	-- In tên ra Output (nếu có)
 	if #name > 0 then
 		print("👤 Tên người dùng:", name)
 	end
 
-	-- Kiểm tra loadstring (chỉ có khi dùng executor)
 	if not loadstring then
 		statusLabel.Text = "❌ loadstring không hỗ trợ. Cần executor."
-		warn("Executor required: loadstring is not available in normal Roblox environment.")
 		return
 	end
 
-	local fn, syntaxErr = loadstring(code)
+	local fn, err = loadstring(code)
 	if not fn then
-		statusLabel.Text = "❌ Lỗi cú pháp: " .. tostring(syntaxErr)
+		statusLabel.Text = "❌ Lỗi cú pháp: " .. tostring(err)
 		return
 	end
 
-	local success, runtimeResult = pcall(fn)
+	local success, result = pcall(fn)
 	if success then
 		statusLabel.Text = "✅ Đã thực thi (xem Output)"
-		print("✅ [Executor] Kết quả:", runtimeResult)
+		print("✅ [Executor] Kết quả:", result)
 	else
-		statusLabel.Text = "❌ Lỗi runtime: " .. tostring(runtimeResult)
-		warn("❌ [Executor] Runtime Error:", runtimeResult)
+		statusLabel.Text = "❌ Lỗi runtime: " .. tostring(result)
+		warn("❌ [Executor] Runtime Error:", result)
 	end
 end)
