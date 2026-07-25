@@ -1,12 +1,11 @@
 -- ============================================
--- MENU EXECUTOR by Vietnamese Developer
--- Toggle bằng nút nhỏ góc phải, Run Code bằng loadstring
+-- ROBLOX SCRIPT EXECUTOR (LocalScript)
+-- Toggle menu bằng nút ⚙, nhập tên + code, chạy code (cần executor hỗ trợ loadstring)
 -- ============================================
 
 local player = game.Players.LocalPlayer
 local playerGui = player:WaitForChild("PlayerGui")
 
--- Tạo ScreenGui
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "ExecutorMenu"
 screenGui.Parent = playerGui
@@ -25,12 +24,10 @@ toggleButton.TextSize = 28
 toggleButton.BorderSizePixel = 0
 toggleButton.Parent = screenGui
 
--- Bo góc cho nút toggle
 local toggleCorner = Instance.new("UICorner")
-toggleCorner.CornerRadius = UDim.new(1, 0)  -- tròn hoàn toàn
+toggleCorner.CornerRadius = UDim.new(1, 0)  -- tròn
 toggleCorner.Parent = toggleButton
 
--- Hiệu ứng hover cho nút toggle
 toggleButton.MouseEnter:Connect(function()
 	toggleButton.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
 end)
@@ -44,7 +41,7 @@ end)
 local mainFrame = Instance.new("Frame")
 mainFrame.Name = "MainFrame"
 mainFrame.Size = UDim2.new(0, 340, 0, 300)
-mainFrame.Position = UDim2.new(0.5, -170, 0.5, -150)  -- giữa màn hình
+mainFrame.Position = UDim2.new(0.5, -170, 0.5, -150)
 mainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
 mainFrame.BorderSizePixel = 0
 mainFrame.Visible = false
@@ -54,7 +51,7 @@ local mainCorner = Instance.new("UICorner")
 mainCorner.CornerRadius = UDim.new(0, 8)
 mainCorner.Parent = mainFrame
 
--- Thanh tiêu đề (có nút đóng)
+-- Thanh tiêu đề
 local titleBar = Instance.new("Frame")
 titleBar.Size = UDim2.new(1, 0, 0, 30)
 titleBar.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
@@ -167,7 +164,6 @@ local runCorner = Instance.new("UICorner")
 runCorner.CornerRadius = UDim.new(0, 6)
 runCorner.Parent = runButton
 
--- Hiệu ứng hover nút Run
 runButton.MouseEnter:Connect(function()
 	runButton.BackgroundColor3 = Color3.fromRGB(0, 200, 120)
 end)
@@ -175,7 +171,7 @@ runButton.MouseLeave:Connect(function()
 	runButton.BackgroundColor3 = Color3.fromRGB(0, 170, 100)
 end)
 
--- Label hiển thị kết quả/thông báo nhỏ
+-- Label trạng thái
 local statusLabel = Instance.new("TextLabel")
 statusLabel.Size = UDim2.new(1, -20, 0, 20)
 statusLabel.Position = UDim2.new(0, 10, 0, 270)
@@ -187,58 +183,27 @@ statusLabel.TextSize = 12
 statusLabel.TextWrapped = true
 statusLabel.Parent = mainFrame
 
--- ===================================
--- LOGIC XỬ LÝ
--- ===================================
-
--- Hàm ẩn/hiện menu
-local function toggleMenu()
-	mainFrame.Visible = not mainFrame.Visible
-	if mainFrame.Visible then
-		toggleButton.Text = "✕"  -- đổi sang dấu X khi menu mở
-	else
-		toggleButton.Text = "⚙"
-	end
+-- ====================
+-- XỬ LÝ ẨN / HIỆN MENU
+-- ====================
+local menuOpen = false
+local function setMenuState(state)
+	menuOpen = state
+	mainFrame.Visible = state
+	toggleButton.Text = state and "✕" or "⚙"
 end
 
--- Gán sự kiện cho nút toggle và nút đóng
-toggleButton.MouseButton1Click:Connect(toggleMenu)
-closeButton.MouseButton1Click:Connect(toggleMenu)
+toggleButton.MouseButton1Click:Connect(function()
+	setMenuState(not menuOpen)
+end)
 
--- Hàm thực thi code (có kiểm tra loadstring)
-local function executeCode()
-	local code = codeBox.Text
-	if code == "" then
-		statusLabel.Text = "⚠️ Vui lòng nhập code!"
-		return
-	end
+closeButton.MouseButton1Click:Connect(function()
+	setMenuState(false)
+end)
 
-	-- Kiểm tra loadstring có khả dụng không
-	if not loadstring then
-		statusLabel.Text = "❌ loadstring không được hỗ trợ trong môi trường này."
-		return
-	end
-
-	local fn, err = loadstring(code)
-	if not fn then
-		statusLabel.Text = "❌ Lỗi cú pháp: " .. tostring(err)
-		return
-	end
-
-	-- Chạy code trong môi trường an toàn (pcall)
-	local success, result = pcall(fn)
-	if success then
-		statusLabel.Text = "✅ Thực thi thành công!"
-		print("✅ Code executed successfully", result)  -- in ra Output (F9)
-	else
-		statusLabel.Text = "❌ Lỗi thực thi: " .. tostring(result)
-		warn("❌ Execution error: ", result)
-	end
-end
-
-runButton.MouseButton1Click:Connect(executeCode)
-
--- Cho phép kéo thả menu (tùy chọn, không yêu cầu nhưng thêm cho đẹp)
+-- ====================
+-- KÉO THẢ MENU (đã sửa lỗi)
+-- ====================
 local UserInputService = game:GetService("UserInputService")
 local dragging = false
 local dragStartPos = nil
@@ -249,19 +214,53 @@ titleBar.InputBegan:Connect(function(input)
 		dragging = true
 		dragStartPos = input.Position
 		frameStartPos = mainFrame.Position
-		input.Draggable = true  -- có thể dùng Draggable nhưng ta tự code để mượt hơn
 	end
 end)
 
 titleBar.InputChanged:Connect(function(input)
 	if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
 		local delta = input.Position - dragStartPos
-		mainFrame.Position = UDim2.new(frameStartPos.X.Scale, frameStartPos.X.Offset + delta.X, frameStartPos.Y.Scale, frameStartPos.Y.Offset + delta.Y)
+		mainFrame.Position = UDim2.new(
+			frameStartPos.X.Scale, frameStartPos.X.Offset + delta.X,
+			frameStartPos.Y.Scale, frameStartPos.Y.Offset + delta.Y
+		)
 	end
 end)
 
 titleBar.InputEnded:Connect(function(input)
 	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 		dragging = false
+	end
+end)
+
+-- ====================
+-- CHẠY CODE
+-- ====================
+runButton.MouseButton1Click:Connect(function()
+	local code = codeBox.Text
+	if code == "" then
+		statusLabel.Text = "⚠️ Vui lòng nhập code!"
+		return
+	end
+
+	-- Kiểm tra xem loadstring có tồn tại không (chỉ có trong executor bên thứ ba)
+	if not loadstring then
+		statusLabel.Text = "❌ loadstring không được hỗ trợ trong Roblox thông thường."
+		return
+	end
+
+	local fn, err = loadstring(code)
+	if not fn then
+		statusLabel.Text = "❌ Lỗi cú pháp: " .. tostring(err)
+		return
+	end
+
+	local success, result = pcall(fn)
+	if success then
+		statusLabel.Text = "✅ Thực thi thành công! (xem Output)"
+		print("✅ Executed:", result)
+	else
+		statusLabel.Text = "❌ Lỗi thực thi: " .. tostring(result)
+		warn("❌ Error:", result)
 	end
 end)
