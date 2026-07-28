@@ -5,12 +5,21 @@
     - GIỮ NGUYÊN TOÀN BỘ CÁC TÍNH NĂNG: FLY PLAYER/LOCATIONS/WALL, BU NGƯỜI CHƠI, ESP REALTIME, WALL CREATOR, GLOW
 --]]
 
+-- Đảm bảo game đã load
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
 local TweenService = game:GetService("TweenService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
+
+-- Debug
+print("🚀 Banana Fly Script Starting...")
+print("👤 Player:", LocalPlayer.Name)
 
 -- Variables
 local selectedPlayer = nil
@@ -79,12 +88,25 @@ local COLOR_DEAD = Color3.fromRGB(230, 30, 30)
 local TEXT_DARK = Color3.fromRGB(15, 15, 25)
 local TEXT_LIGHT = Color3.fromRGB(255, 255, 255)
 
--- UI Construction
+-- UI Construction với pcall để tránh lỗi
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "FlyBananaCatResizableSplitter"
-ScreenGui.Parent = (RunService:IsStudio() and LocalPlayer.PlayerGui) or CoreGui
 ScreenGui.ResetOnSpawn = false
 ScreenGui.DisplayOrder = 999
+ScreenGui.Enabled = true
+ScreenGui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+
+-- Thử đặt parent
+local success, err = pcall(function()
+    ScreenGui.Parent = CoreGui
+end)
+
+if not success then
+    warn("Không thể đặt vào CoreGui:", err)
+    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+end
+
+print("✅ ScreenGui Parent:", ScreenGui.Parent.Name)
 
 -- Main Frame
 local MainFrame = Instance.new("Frame")
@@ -98,6 +120,7 @@ MainFrame.BorderSizePixel = 1
 MainFrame.Active = true
 MainFrame.Draggable = false
 MainFrame.ClipsDescendants = false
+MainFrame.Visible = true
 MainFrame.Parent = ScreenGui
 
 local MainCorner = Instance.new("UICorner")
@@ -165,6 +188,8 @@ CloseBtn.Font = Enum.Font.SourceSansBold
 CloseBtn.TextSize = 13
 CloseBtn.ZIndex = 5
 CloseBtn.Parent = MainFrame
+
+print("✅ MainFrame đã được tạo và hiển thị")
 
 ---------------------------------------------------------
 -- CƠ CHẾ KÉO MENU (CHỈ KÉO KHI NHẤN GIỮ NÚT "🖐️ DI CHUYỂN")
@@ -2267,3 +2292,7 @@ UserInputService.InputBegan:Connect(function(input, gpe)
         setMenuVisible(not MainFrame.Visible)
     end
 end)
+
+print("✅ Banana Fly Script đã tải hoàn tất!")
+print("📌 Nhấn RightControl để ẩn/hiện menu")
+print("👤 Người chơi:", LocalPlayer.Name)
