@@ -1,8 +1,8 @@
 --[[
     FLY TO PLAYER, SAVED LOCATIONS & TRANSPARENT WALL CREATOR
-    - NÂNG CẤP: THÊM NÚT GIỮ ĐỂ DI CHUYỂN MENU "🖐️ DI CHUYỂN" BÊN PHẢI TIÊU ĐỀ
-    - CƠ CHẾ: CHỈ KÉO ĐƯỢC MENU KHI NHẤN GIỮ NÚT DI CHUYỂN, BỎ TAY RA SẼ CỐ ĐỊNH MENU
-    - GIỮ NGUYÊN TOÀN BỘ CÁC TÍNH NĂNG: FLY PLAYER/LOCATIONS/WALL, BU NGƯỜI CHƠI, ESP REALTIME, WALL CREATOR, GLOW
+    - CẬP NHẬT MỚI: TÍNH NĂNG XUYÊN TƯỜNG THẢM KÍNH (NẰM TRÊN BU NGƯỜI CHƠI)
+    - BẢNG HUD 5 NÚT: BAY LÊN, BAY XUỐNG, XUYÊN THẲNG, TẮT THẢM KÍNH & GIỮ ĐỂ DI CHUYỂN HUD
+    - NÚT DI CHUYỂN MENU CHÍNH: CHỈ KÉO ĐƯỢC KHI NHẤN GIỮ NÚT "🖐️ DI CHUYỂN"
 --]]
 
 local TweenService = game:GetService("TweenService")
@@ -26,6 +26,14 @@ local isFlying = false
 local stopRequested = false
 local currentTween = nil
 local noclipConnection = nil
+
+-- Standalone Carpet Noclip Variables
+local standaloneNoclipActive = false
+local straightNoclipActive = false
+local noclipCarpetPart = nil
+local noclipHeight = 0
+local isNoclipUpHeld = false
+local isNoclipDownHeld = false
 
 -- Follow / Bu Người Variables
 local followPlayerActive = false
@@ -104,7 +112,7 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
--- Title Bar (Thu hẹp độ rộng để chừa chỗ cho Nút Di Chuyển)
+-- Title Bar
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, -150, 0, 34)
 Title.Position = UDim2.new(0, 0, 0, 0)
@@ -122,7 +130,7 @@ local TitleCorner = Instance.new("UICorner")
 TitleCorner.CornerRadius = UDim.new(0, 10)
 TitleCorner.Parent = Title
 
--- NÚT GIỮ ĐỂ DI CHUYỂN MENU (DRAG HANDLE BUTTON)
+-- NÚT GIỮ ĐỂ DI CHUYỂN MENU CHÍNH
 local DragHandleBtn = Instance.new("TextButton")
 DragHandleBtn.Name = "DragHandleBtn"
 DragHandleBtn.Size = UDim2.new(0, 85, 0, 24)
@@ -167,7 +175,7 @@ CloseBtn.ZIndex = 5
 CloseBtn.Parent = MainFrame
 
 ---------------------------------------------------------
--- CƠ CHẾ KÉO MENU (CHỈ KÉO KHI NHẤN GIỮ NÚT "🖐️ DI CHUYỂN")
+-- CƠ CHẾ KÉO MENU CHÍNH (CHỈ KÉO KHI NHẤN GIỮ NÚT "🖐️ DI CHUYỂN")
 ---------------------------------------------------------
 local draggingMain = false
 local dragStartMouse, dragStartPos
@@ -178,7 +186,6 @@ DragHandleBtn.InputBegan:Connect(function(input)
         dragStartMouse = UserInputService:GetMouseLocation()
         dragStartPos = MainFrame.AbsolutePosition
         
-        -- Hiệu ứng đổi màu nút khi đang giữ để kéo
         DragHandleBtn.BackgroundColor3 = COLOR_GREEN
         DragHandleBtn.TextColor3 = TEXT_LIGHT
     end
@@ -188,7 +195,6 @@ UserInputService.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
         if draggingMain then
             draggingMain = false
-            -- Khôi phục màu nút ban đầu
             DragHandleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
             DragHandleBtn.TextColor3 = TEXT_DARK
         end
@@ -200,6 +206,149 @@ UserInputService.InputChanged:Connect(function(input)
         local currentMouse = UserInputService:GetMouseLocation()
         local delta = currentMouse - dragStartMouse
         MainFrame.Position = UDim2.new(0, dragStartPos.X + delta.X, 0, dragStartPos.Y + delta.Y)
+    end
+end)
+
+---------------------------------------------------------
+-- BẢNG ĐIỀU KHIỂN HUD 5 NÚT BẤM (NOCLIP HUD)
+---------------------------------------------------------
+local NoclipHUD = Instance.new("Frame")
+NoclipHUD.Name = "NoclipControlHUD"
+NoclipHUD.Size = UDim2.new(0, 130, 0, 175)
+NoclipHUD.Position = UDim2.new(0.85, -65, 0.35, 0)
+NoclipHUD.BackgroundColor3 = Color3.fromRGB(30, 35, 45)
+NoclipHUD.BackgroundTransparency = 0.25
+NoclipHUD.BorderColor3 = Color3.fromRGB(255, 255, 255)
+NoclipHUD.BorderSizePixel = 1
+NoclipHUD.Visible = false
+NoclipHUD.ZIndex = 150
+NoclipHUD.Parent = ScreenGui
+
+local HudCorner = Instance.new("UICorner")
+HudCorner.CornerRadius = UDim.new(0, 8)
+HudCorner.Parent = NoclipHUD
+
+local HudTitle = Instance.new("TextLabel")
+HudTitle.Size = UDim2.new(1, 0, 0, 20)
+HudTitle.BackgroundTransparency = 1
+HudTitle.Text = "👻 THẢM KÍNH NOCLIP"
+HudTitle.TextColor3 = TEXT_LIGHT
+HudTitle.Font = Enum.Font.SourceSansBold
+HudTitle.TextSize = 10
+HudTitle.Parent = NoclipHUD
+
+-- Nút 1: Bay Lên
+local HudUpBtn = Instance.new("TextButton")
+HudUpBtn.Size = UDim2.new(0.9, 0, 0, 25)
+HudUpBtn.Position = UDim2.new(0.05, 0, 0, 22)
+HudUpBtn.BackgroundColor3 = COLOR_GREEN
+HudUpBtn.BackgroundTransparency = 0.2
+HudUpBtn.Text = "⬆️ Bay Lên"
+HudUpBtn.TextColor3 = TEXT_LIGHT
+HudUpBtn.Font = Enum.Font.SourceSansBold
+HudUpBtn.TextSize = 11
+HudUpBtn.Parent = NoclipHUD
+
+local UpCorner = Instance.new("UICorner")
+UpCorner.CornerRadius = UDim.new(0, 4)
+UpCorner.Parent = HudUpBtn
+
+-- Nút 2: Bay Xuống
+local HudDownBtn = Instance.new("TextButton")
+HudDownBtn.Size = UDim2.new(0.9, 0, 0, 25)
+HudDownBtn.Position = UDim2.new(0.05, 0, 0, 50)
+HudDownBtn.BackgroundColor3 = WATER_BLUE
+HudDownBtn.BackgroundTransparency = 0.2
+HudDownBtn.Text = "⬇️ Bay Xuống"
+HudDownBtn.TextColor3 = TEXT_LIGHT
+HudDownBtn.Font = Enum.Font.SourceSansBold
+HudDownBtn.TextSize = 11
+HudDownBtn.Parent = NoclipHUD
+
+local DownCorner = Instance.new("UICorner")
+DownCorner.CornerRadius = UDim.new(0, 4)
+DownCorner.Parent = HudDownBtn
+
+-- Nút 3: Xuyên Tường Thẳng
+local HudStraightBtn = Instance.new("TextButton")
+HudStraightBtn.Size = UDim2.new(0.9, 0, 0, 25)
+HudStraightBtn.Position = UDim2.new(0.05, 0, 0, 78)
+HudStraightBtn.BackgroundColor3 = Color3.fromRGB(150, 90, 220)
+HudStraightBtn.BackgroundTransparency = 0.2
+HudStraightBtn.Text = "➡️ Xuyên Thẳng: OFF"
+HudStraightBtn.TextColor3 = TEXT_LIGHT
+HudStraightBtn.Font = Enum.Font.SourceSansBold
+HudStraightBtn.TextSize = 10
+HudStraightBtn.Parent = NoclipHUD
+
+local StraightCorner = Instance.new("UICorner")
+StraightCorner.CornerRadius = UDim.new(0, 4)
+StraightCorner.Parent = HudStraightBtn
+
+-- Nút 4: Tắt Thảm Kính
+local HudOffBtn = Instance.new("TextButton")
+HudOffBtn.Size = UDim2.new(0.9, 0, 0, 23)
+HudOffBtn.Position = UDim2.new(0.05, 0, 0, 106)
+HudOffBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+HudOffBtn.BackgroundTransparency = 0.2
+HudOffBtn.Text = "❌ Tắt Thảm Kính"
+HudOffBtn.TextColor3 = TEXT_LIGHT
+HudOffBtn.Font = Enum.Font.SourceSansBold
+HudOffBtn.TextSize = 10
+HudOffBtn.Parent = NoclipHUD
+
+local OffCorner = Instance.new("UICorner")
+OffCorner.CornerRadius = UDim.new(0, 4)
+OffCorner.Parent = HudOffBtn
+
+-- Nút 5: Nhấn Giữ Để Di Chuyển HUD
+local HudDragBtn = Instance.new("TextButton")
+HudDragBtn.Size = UDim2.new(0.9, 0, 0, 22)
+HudDragBtn.Position = UDim2.new(0.05, 0, 0, 138)
+HudDragBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+HudDragBtn.BackgroundTransparency = 0.3
+HudDragBtn.Text = "🖐️ Di Chuyển HUD"
+HudDragBtn.TextColor3 = TEXT_DARK
+HudDragBtn.Font = Enum.Font.SourceSansBold
+HudDragBtn.TextSize = 10
+HudDragBtn.Parent = NoclipHUD
+
+local HudDragCorner = Instance.new("UICorner")
+HudDragCorner.CornerRadius = UDim.new(0, 4)
+HudDragCorner.Parent = HudDragBtn
+
+---------------------------------------------------------
+-- CƠ CHẾ KÉO BẢNG HUD (CHỈ KÉO KHI NHẤN GIỮ "🖐️ DI CHUYỂN HUD")
+---------------------------------------------------------
+local draggingHud = false
+local dragHudStartMouse, dragHudStartPos
+
+HudDragBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingHud = true
+        dragHudStartMouse = UserInputService:GetMouseLocation()
+        dragHudStartPos = NoclipHUD.AbsolutePosition
+        
+        HudDragBtn.BackgroundColor3 = COLOR_GREEN
+        HudDragBtn.TextColor3 = TEXT_LIGHT
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if draggingHud then
+            draggingHud = false
+            HudDragBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+            HudDragBtn.TextColor3 = TEXT_DARK
+        end
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if draggingHud and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local currentMouse = UserInputService:GetMouseLocation()
+        local delta = currentMouse - dragHudStartMouse
+        NoclipHUD.Position = UDim2.new(0, dragHudStartPos.X + delta.X, 0, dragHudStartPos.Y + delta.Y)
     end
 end)
 
@@ -514,9 +663,25 @@ P_PanelPadding.PaddingLeft = UDim.new(0, 4)
 P_PanelPadding.PaddingRight = UDim.new(0, 6)
 P_PanelPadding.Parent = P_RightPanel
 
+-- 0. NÚT XUYÊN TƯỜNG THẢM KÍNH (NẰM TRÊN CÙNG / TRÊN BU NGƯỜI CHƠI)
+local StandaloneNoclipBtn = Instance.new("TextButton")
+StandaloneNoclipBtn.LayoutOrder = 1
+StandaloneNoclipBtn.Size = UDim2.new(1, 0, 0, 24)
+StandaloneNoclipBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+StandaloneNoclipBtn.BackgroundTransparency = 0.3
+StandaloneNoclipBtn.Text = "👻 Xuyên Tường Thảm Kính: OFF"
+StandaloneNoclipBtn.TextColor3 = TEXT_DARK
+StandaloneNoclipBtn.Font = Enum.Font.SourceSansBold
+StandaloneNoclipBtn.TextSize = 11
+StandaloneNoclipBtn.Parent = P_RightPanel
+
+local NoclipCorner = Instance.new("UICorner")
+NoclipCorner.CornerRadius = UDim.new(0, 4)
+NoclipCorner.Parent = StandaloneNoclipBtn
+
 -- 1. NÚT BU NGƯỜI CHƠI (BAY BÁM ĐUỔI REALTIME)
 local FollowPlayerBtn = Instance.new("TextButton")
-FollowPlayerBtn.LayoutOrder = 1
+FollowPlayerBtn.LayoutOrder = 2
 FollowPlayerBtn.Size = UDim2.new(1, 0, 0, 24)
 FollowPlayerBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
 FollowPlayerBtn.BackgroundTransparency = 0.3
@@ -532,7 +697,7 @@ FollowCorner.Parent = FollowPlayerBtn
 
 -- 2. ESP Player All
 local EspAllBtn = Instance.new("TextButton")
-EspAllBtn.LayoutOrder = 2
+EspAllBtn.LayoutOrder = 3
 EspAllBtn.Size = UDim2.new(1, 0, 0, 24)
 EspAllBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
 EspAllBtn.BackgroundTransparency = 0.3
@@ -548,7 +713,7 @@ EspAllCorner.Parent = EspAllBtn
 
 -- 3. ESP Player Single
 local EspSingleBtn = Instance.new("TextButton")
-EspSingleBtn.LayoutOrder = 3
+EspSingleBtn.LayoutOrder = 4
 EspSingleBtn.Size = UDim2.new(1, 0, 0, 24)
 EspSingleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
 EspSingleBtn.BackgroundTransparency = 0.3
@@ -564,7 +729,7 @@ EspSingleCorner.Parent = EspSingleBtn
 
 -- 4. Nút Phát Sáng
 local GlowToggleBtn = Instance.new("TextButton")
-GlowToggleBtn.LayoutOrder = 4
+GlowToggleBtn.LayoutOrder = 5
 GlowToggleBtn.Size = UDim2.new(1, 0, 0, 24)
 GlowToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
 GlowToggleBtn.BackgroundTransparency = 0.3
@@ -580,7 +745,7 @@ GlowCorner.Parent = GlowToggleBtn
 
 -- 5. Bán Kính Phát Sáng Label & Box
 local GlowRangeLabel = Instance.new("TextLabel")
-GlowRangeLabel.LayoutOrder = 5
+GlowRangeLabel.LayoutOrder = 6
 GlowRangeLabel.Size = UDim2.new(1, 0, 0, 14)
 GlowRangeLabel.BackgroundTransparency = 1
 GlowRangeLabel.Text = "💡 Bán kính sáng (Studs):"
@@ -591,7 +756,7 @@ GlowRangeLabel.TextSize = 10
 GlowRangeLabel.Parent = P_RightPanel
 
 local GlowRangeBox = Instance.new("TextBox")
-GlowRangeBox.LayoutOrder = 6
+GlowRangeBox.LayoutOrder = 7
 GlowRangeBox.Size = UDim2.new(1, 0, 0, 22)
 GlowRangeBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 GlowRangeBox.BackgroundTransparency = 0.3
@@ -603,7 +768,7 @@ GlowRangeBox.Parent = P_RightPanel
 
 -- 6. Chiều cao Label & Box
 local P_HeightLabel = Instance.new("TextLabel")
-P_HeightLabel.LayoutOrder = 7
+P_HeightLabel.LayoutOrder = 8
 P_HeightLabel.Size = UDim2.new(1, 0, 0, 14)
 P_HeightLabel.BackgroundTransparency = 1
 P_HeightLabel.Text = "📏 Chiều cao (Height):"
@@ -614,7 +779,7 @@ P_HeightLabel.TextSize = 10
 P_HeightLabel.Parent = P_RightPanel
 
 local P_HeightBox = Instance.new("TextBox")
-P_HeightBox.LayoutOrder = 8
+P_HeightBox.LayoutOrder = 9
 P_HeightBox.Size = UDim2.new(1, 0, 0, 22)
 P_HeightBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 P_HeightBox.BackgroundTransparency = 0.3
@@ -626,7 +791,820 @@ P_HeightBox.Parent = P_RightPanel
 
 -- 7. Tốc độ Label & Box
 local P_SpeedLabel = Instance.new("TextLabel")
-P_SpeedLabel.LayoutOrder = 9
+P_SpeedLabel.LayoutOrder = 10
+P_SpeedLabel.Size = UDim2.new(1, 0, 0, 14)
+P_SpeedLabel.BackgroundTransparency = 1
+P_SpeedLabel.Text = "⚡ Tốc độ (Speed):"
+P_SpeedLabel.TextColor3 = TEXT_DARK
+P_SpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+P_SpeedLabel.Font = Enum.Font.SourceSansBold
+P_SpeedLabel.TextSize = 10
+P_SpeedLabel.Parent = P_RightPanel
+
+local P_SpeedBox = Dưới đây là toàn bộ bản script đã được nâng cấp đầy đủ tất cả các yêu cầu của bạn:
+
+### 🌟 Các tính năng mới được nâng cấp:
+1. **Nút "👻 Xuyên Tường Thảm Kính"** được đặt ở **trên cùng (phía trên tính năng Bu Người Chơi)** trong Tab Người chơi.
+2. **Bảng Điều Khiển HUD 5 NÚT BẤM trên màn hình**:
+   - ⬆️ **Bay Lên**: Nhấn giữ để nâng độ cao và bay noclip lên qua trần nhà/vật cản.
+   - ⬇️ **Bay Xuống**: Nhấn giữ để hạ độ cao và bay noclip xuống qua sàn nhà/lòng đất.
+   - ➡️ **Xuyên Thẳng (ON/OFF)**: Cho phép đâm xuyên thẳng qua mọi bức tường, góc hẹp, vật cản theo hướng bạn đang nhìn.
+   - ❌ **Tắt Thảm Kính**: Tắt toàn bộ noclip, xóa thảm và ẩn HUD.
+   - 🖐️ **Kéo HUD**: **Bắt buộc nhấn giữ nút này** thì mới di chuyển được vị trí bảng HUD trên màn hình.
+3. **Cơ chế kéo Menu chính**: Giữ nguyên nút **"🖐️ Di Chuyển"** ở góc trên bên phải thanh tiêu đề Menu (Chỉ kéo được Menu khi nhấn giữ nút này).
+
+```lua
+--[[
+    FLY TO PLAYER, SAVED LOCATIONS & TRANSPARENT WALL CREATOR
+    - NÂNG CẤP: TÍNH NĂNG XUYÊN TƯỜNG THẢM KÍNH + BẢNG HUD 5 NÚT ĐIỀU KHIỂN MÀN HÌNH
+    - 5 NÚT HUD: BAY LÊN, BAY XUỐNG, XUYÊN THẲNG (MỌI GÓC HẸP), TẮT THẢM, KÉO DI CHUYỂN HUD
+    - BẮT BUỘC NHẤN GIỮ NÚT "🖐️ DI CHUYỂN" MỚI DI CHUYỂN ĐƯỢC MENU VÀ HUD
+    - GIỮ NGUYÊN TOÀN BỘ CÁC TÍNH NĂNG: FLY PLAYER/LOCATIONS/WALL, BU NGƯỜI CHƠI, ESP REALTIME, WALL CREATOR, GLOW
+--]]
+
+local TweenService = game:GetService("TweenService")
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local CoreGui = game:GetService("CoreGui")
+
+-- Variables
+local selectedPlayer = nil
+local selectedLocation = nil
+local selectedWall = nil
+
+local savedLocations = {}
+local spawnedWalls = {} -- {id, name, part}
+local wallCounter = 0
+local activeTab = "Players"
+
+local isFlying = false
+local stopRequested = false
+local currentTween = nil
+local noclipConnection = nil
+
+-- Noclip Glass Carpet Variables
+local standaloneNoclipActive = false
+local straightNoclipActive = false
+local noclipCarpetPart = nil
+local noclipHeight = 0
+local isNoclipUpHeld = false
+local isNoclipDownHeld = false
+
+-- Follow / Bu Người Variables
+local followPlayerActive = false
+local followConnection = nil
+
+-- Splitter Ratio (Tab 1: Players)
+local splitRatio = 0.60 
+local minSplit = 0.30
+local maxSplit = 0.80
+
+-- Splitter Ratio (Tab 3: Walls)
+local wallSplitRatio = 0.52
+local minWallSplit = 0.25
+local maxWallSplit = 0.75
+
+-- Player ESP Variables
+local espAllActive = false
+local espSingleActive = false
+local espStorage = {}          
+local downedTimeTracker = {}   
+
+-- Location ESP Variables
+local locEspAllActive = false
+local locEspSingleActive = false
+local locEspStorage = {}       
+
+-- Wall ESP Variables
+local wallEspAllActive = false
+local wallEspSingleActive = false
+local wallEspStorage = {}
+
+-- Glow / Light Variables
+local glowActive = false
+local glowLightInstance = nil
+
+-- Visual Height Pillar Variables
+local heightVisualPart = nil
+local heightVisualConn = nil
+local showHeightVisual = false
+
+-- Theme Colors
+local COLOR_MAIN_BG = Color3.fromRGB(245, 247, 252)
+local COLOR_TITLE_BG = Color3.fromRGB(215, 220, 230)
+local COLOR_TAB_ACTIVE = Color3.fromRGB(255, 255, 255)
+local COLOR_TAB_INACTIVE = Color3.fromRGB(200, 205, 215)
+local COLOR_STRIPE_EVEN = Color3.fromRGB(255, 255, 255)
+local COLOR_STRIPE_ODD = Color3.fromRGB(215, 220, 230)
+local WATER_BLUE = Color3.fromRGB(0, 140, 240)
+local COLOR_GREEN = Color3.fromRGB(40, 170, 90)
+local COLOR_DEAD = Color3.fromRGB(230, 30, 30)
+local TEXT_DARK = Color3.fromRGB(15, 15, 25)
+local TEXT_LIGHT = Color3.fromRGB(255, 255, 255)
+
+-- UI Construction
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "FlyBananaCatResizableSplitter"
+ScreenGui.Parent = (RunService:IsStudio() and LocalPlayer.PlayerGui) or CoreGui
+ScreenGui.ResetOnSpawn = false
+ScreenGui.DisplayOrder = 999
+
+-- Main Frame
+local MainFrame = Instance.new("Frame")
+MainFrame.Name = "MainFrame"
+MainFrame.Size = UDim2.new(0, 580, 0, 420)
+MainFrame.Position = UDim2.new(0.5, -290, 0.5, -210)
+MainFrame.BackgroundColor3 = COLOR_MAIN_BG
+MainFrame.BackgroundTransparency = 0.55
+MainFrame.BorderColor3 = Color3.fromRGB(255, 255, 255)
+MainFrame.BorderSizePixel = 1
+MainFrame.Active = true
+MainFrame.Draggable = false
+MainFrame.ClipsDescendants = false
+MainFrame.Parent = ScreenGui
+
+local MainCorner = Instance.new("UICorner")
+MainCorner.CornerRadius = UDim.new(0, 10)
+MainCorner.Parent = MainFrame
+
+-- Title Bar
+local Title = Instance.new("TextLabel")
+Title.Size = UDim2.new(1, -150, 0, 34)
+Title.Position = UDim2.new(0, 0, 0, 0)
+Title.BackgroundColor3 = COLOR_TITLE_BG
+Title.BackgroundTransparency = 0.4
+Title.Text = "  🍌 BANANA FLY & ESP LOCATIONS"
+Title.TextColor3 = TEXT_DARK
+Title.TextSize = 13
+Title.Font = Enum.Font.SourceSansBold
+Title.TextXAlignment = Enum.TextXAlignment.Left
+Title.Active = false
+Title.Parent = MainFrame
+
+local TitleCorner = Instance.new("UICorner")
+TitleCorner.CornerRadius = UDim.new(0, 10)
+TitleCorner.Parent = Title
+
+-- NÚT GIỮ ĐỂ DI CHUYỂN MENU CHÍNH
+local DragHandleBtn = Instance.new("TextButton")
+DragHandleBtn.Name = "DragHandleBtn"
+DragHandleBtn.Size = UDim2.new(0, 85, 0, 24)
+DragHandleBtn.Position = UDim2.new(1, -145, 0, 5)
+DragHandleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+DragHandleBtn.BackgroundTransparency = 0.3
+DragHandleBtn.Text = "🖐️ Di Chuyển"
+DragHandleBtn.TextColor3 = TEXT_DARK
+DragHandleBtn.Font = Enum.Font.SourceSansBold
+DragHandleBtn.TextSize = 11
+DragHandleBtn.ZIndex = 5
+DragHandleBtn.Parent = MainFrame
+
+local DragCorner = Instance.new("UICorner")
+DragCorner.CornerRadius = UDim.new(0, 4)
+DragCorner.Parent = DragHandleBtn
+
+-- Minimize Button (-)
+local MinimizeBtn = Instance.new("TextButton")
+MinimizeBtn.Size = UDim2.new(0, 26, 0, 24)
+MinimizeBtn.Position = UDim2.new(1, -56, 0, 5)
+MinimizeBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+MinimizeBtn.BackgroundTransparency = 0.3
+MinimizeBtn.Text = "-"
+MinimizeBtn.TextColor3 = TEXT_DARK
+MinimizeBtn.Font = Enum.Font.SourceSansBold
+MinimizeBtn.TextSize = 18
+MinimizeBtn.ZIndex = 5
+MinimizeBtn.Parent = MainFrame
+
+-- Close Button (X)
+local CloseBtn = Instance.new("TextButton")
+CloseBtn.Size = UDim2.new(0, 26, 0, 24)
+CloseBtn.Position = UDim2.new(1, -28, 0, 5)
+CloseBtn.BackgroundColor3 = Color3.fromRGB(235, 70, 70)
+CloseBtn.BackgroundTransparency = 0.2
+CloseBtn.Text = "X"
+CloseBtn.TextColor3 = TEXT_LIGHT
+CloseBtn.Font = Enum.Font.SourceSansBold
+CloseBtn.TextSize = 13
+CloseBtn.ZIndex = 5
+CloseBtn.Parent = MainFrame
+
+---------------------------------------------------------
+-- CƠ CHẾ KÉO MENU CHÍNH (BẮT BUỘC NHẤN GIỮ NÚT "🖐️ DI CHUYỂN")
+---------------------------------------------------------
+local draggingMain = false
+local dragStartMouse, dragStartPos
+
+DragHandleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingMain = true
+        dragStartMouse = UserInputService:GetMouseLocation()
+        dragStartPos = MainFrame.AbsolutePosition
+        
+        DragHandleBtn.BackgroundColor3 = COLOR_GREEN
+        DragHandleBtn.TextColor3 = TEXT_LIGHT
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if draggingMain then
+            draggingMain = false
+            DragHandleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+            DragHandleBtn.TextColor3 = TEXT_DARK
+        end
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if draggingMain and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local currentMouse = UserInputService:GetMouseLocation()
+        local delta = currentMouse - dragStartMouse
+        MainFrame.Position = UDim2.new(0, dragStartPos.X + delta.X, 0, dragStartPos.Y + delta.Y)
+    end
+end)
+
+---------------------------------------------------------
+-- BẢNG ĐIỀU KHIỂN THẢM KÍNH NOCLIP HUD (5 NÚT BẤM)
+---------------------------------------------------------
+local NoclipHUD = Instance.new("Frame")
+NoclipHUD.Name = "NoclipControlHUD"
+NoclipHUD.Size = UDim2.new(0, 125, 0, 175)
+NoclipHUD.Position = UDim2.new(0.82, 0, 0.35, 0)
+NoclipHUD.BackgroundColor3 = Color3.fromRGB(30, 35, 45)
+NoclipHUD.BackgroundTransparency = 0.25
+NoclipHUD.BorderColor3 = Color3.fromRGB(255, 255, 255)
+NoclipHUD.BorderSizePixel = 1
+NoclipHUD.Visible = false
+NoclipHUD.ZIndex = 150
+NoclipHUD.Parent = ScreenGui
+
+local HudCorner = Instance.new("UICorner")
+HudCorner.CornerRadius = UDim.new(0, 8)
+HudCorner.Parent = NoclipHUD
+
+local HudTitle = Instance.new("TextLabel")
+HudTitle.Size = UDim2.new(1, 0, 0, 20)
+HudTitle.BackgroundTransparency = 1
+HudTitle.Text = "👻 ĐIỀU KHIỂN THẢM KÍNH"
+HudTitle.TextColor3 = TEXT_LIGHT
+HudTitle.Font = Enum.Font.SourceSansBold
+HudTitle.TextSize = 10
+HudTitle.Parent = NoclipHUD
+
+-- 1. Nút Bay Lên
+local HudUpBtn = Instance.new("TextButton")
+HudUpBtn.Size = UDim2.new(0.9, 0, 0, 24)
+HudUpBtn.Position = UDim2.new(0.05, 0, 0, 22)
+HudUpBtn.BackgroundColor3 = COLOR_GREEN
+HudUpBtn.BackgroundTransparency = 0.2
+HudUpBtn.Text = "⬆️ Bay Lên"
+HudUpBtn.TextColor3 = TEXT_LIGHT
+HudUpBtn.Font = Enum.Font.SourceSansBold
+HudUpBtn.TextSize = 11
+HudUpBtn.Parent = NoclipHUD
+
+local UpCorner = Instance.new("UICorner")
+UpCorner.CornerRadius = UDim.new(0, 4)
+UpCorner.Parent = HudUpBtn
+
+-- 2. Nút Bay Xuống
+local HudDownBtn = Instance.new("TextButton")
+HudDownBtn.Size = UDim2.new(0.9, 0, 0, 24)
+HudDownBtn.Position = UDim2.new(0.05, 0, 0, 50)
+HudDownBtn.BackgroundColor3 = WATER_BLUE
+HudDownBtn.BackgroundTransparency = 0.2
+HudDownBtn.Text = "⬇️ Bay Xuống"
+HudDownBtn.TextColor3 = TEXT_LIGHT
+HudDownBtn.Font = Enum.Font.SourceSansBold
+HudDownBtn.TextSize = 11
+HudDownBtn.Parent = NoclipHUD
+
+local DownCorner = Instance.new("UICorner")
+DownCorner.CornerRadius = UDim.new(0, 4)
+DownCorner.Parent = HudDownBtn
+
+-- 3. Nút Xuyên Thẳng (Chui Mọi Bức Tường/Góc Hẹp)
+local HudStraightBtn = Instance.new("TextButton")
+HudStraightBtn.Size = UDim2.new(0.9, 0, 0, 24)
+HudStraightBtn.Position = UDim2.new(0.05, 0, 0, 78)
+HudStraightBtn.BackgroundColor3 = Color3.fromRGB(180, 130, 240)
+HudStraightBtn.BackgroundTransparency = 0.2
+HudStraightBtn.Text = "➡️ Xuyên Thẳng: OFF"
+HudStraightBtn.TextColor3 = TEXT_LIGHT
+HudStraightBtn.Font = Enum.Font.SourceSansBold
+HudStraightBtn.TextSize = 10
+HudStraightBtn.Parent = NoclipHUD
+
+local StraightCorner = Instance.new("UICorner")
+StraightCorner.CornerRadius = UDim.new(0, 4)
+StraightCorner.Parent = HudStraightBtn
+
+-- 4. Nút Tắt Thảm Kính
+local HudOffBtn = Instance.new("TextButton")
+HudOffBtn.Size = UDim2.new(0.9, 0, 0, 24)
+HudOffBtn.Position = UDim2.new(0.05, 0, 0, 106)
+HudOffBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
+HudOffBtn.BackgroundTransparency = 0.2
+HudOffBtn.Text = "❌ Tắt Thảm Kính"
+HudOffBtn.TextColor3 = TEXT_LIGHT
+HudOffBtn.Font = Enum.Font.SourceSansBold
+HudOffBtn.TextSize = 10
+HudOffBtn.Parent = NoclipHUD
+
+local OffCorner = Instance.new("UICorner")
+OffCorner.CornerRadius = UDim.new(0, 4)
+OffCorner.Parent = HudOffBtn
+
+-- 5. Nút Kéo Di Chuyển HUD (BẮT BUỘC GIỮ MỚI DI CHUYỂN ĐƯỢC HUD)
+local HudDragBtn = Instance.new("TextButton")
+HudDragBtn.Size = UDim2.new(0.9, 0, 0, 22)
+HudDragBtn.Position = UDim2.new(0.05, 0, 0, 140)
+HudDragBtn.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+HudDragBtn.BackgroundTransparency = 0.2
+HudDragBtn.Text = "🖐️ Kéo HUD"
+HudDragBtn.TextColor3 = TEXT_LIGHT
+HudDragBtn.Font = Enum.Font.SourceSansBold
+HudDragBtn.TextSize = 10
+HudDragBtn.Parent = NoclipHUD
+
+local HudDragCorner = Instance.new("UICorner")
+HudDragCorner.CornerRadius = UDim.new(0, 4)
+HudDragCorner.Parent = HudDragBtn
+
+-- Logic Kéo Di Chuyển HUD khi giữ Nút "🖐️ Kéo HUD"
+local dragHud = false
+local dragHudStartMouse, dragHudStartPos
+
+HudDragBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragHud = true
+        dragHudStartMouse = UserInputService:GetMouseLocation()
+        dragHudStartPos = NoclipHUD.AbsolutePosition
+        
+        HudDragBtn.BackgroundColor3 = COLOR_GREEN
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if dragHud then
+            dragHud = false
+            HudDragBtn.BackgroundColor3 = Color3.fromRGB(100, 110, 125)
+        end
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragHud and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local currentMouse = UserInputService:GetMouseLocation()
+        local delta = currentMouse - dragHudStartMouse
+        NoclipHUD.Position = UDim2.new(0, dragHudStartPos.X + delta.X, 0, dragHudStartPos.Y + delta.Y)
+    end
+end)
+
+---------------------------------------------------------
+-- NÚT BẬT / ẨN MENU LUÔN HIỂN THỊ
+---------------------------------------------------------
+local PersistentToggleBtn = Instance.new("TextButton")
+PersistentToggleBtn.Name = "PersistentToggleBtn"
+PersistentToggleBtn.Size = UDim2.new(0, 115, 0, 32)
+PersistentToggleBtn.Position = UDim2.new(0.02, 0, 0.15, 0)
+PersistentToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+PersistentToggleBtn.BackgroundTransparency = 0.35
+PersistentToggleBtn.BorderColor3 = Color3.fromRGB(255, 255, 255)
+PersistentToggleBtn.BorderSizePixel = 1
+PersistentToggleBtn.Text = "🍌 Ẩn Menu"
+PersistentToggleBtn.TextColor3 = TEXT_DARK
+PersistentToggleBtn.Font = Enum.Font.SourceSansBold
+PersistentToggleBtn.TextSize = 13
+PersistentToggleBtn.Visible = true
+PersistentToggleBtn.Active = true
+PersistentToggleBtn.ZIndex = 100
+PersistentToggleBtn.Parent = ScreenGui
+
+local ToggleCorner = Instance.new("UICorner")
+ToggleCorner.CornerRadius = UDim.new(0, 8)
+ToggleCorner.Parent = PersistentToggleBtn
+
+-- Di chuyển nút PersistentToggle
+local dragToggle = false
+local dragToggleStartMouse, dragToggleStartPos
+
+PersistentToggleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragToggle = true
+        dragToggleStartMouse = UserInputService:GetMouseLocation()
+        dragToggleStartPos = PersistentToggleBtn.AbsolutePosition
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        dragToggle = false
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if dragToggle and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local currentMouse = UserInputService:GetMouseLocation()
+        local delta = currentMouse - dragToggleStartMouse
+        PersistentToggleBtn.Position = UDim2.new(0, dragToggleStartPos.X + delta.X, 0, dragToggleStartPos.Y + delta.Y)
+    end
+end)
+
+local function setMenuVisible(visible)
+    MainFrame.Visible = visible
+    if visible then
+        PersistentToggleBtn.Text = "🍌 Ẩn Menu"
+        PersistentToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        PersistentToggleBtn.Text = "🍌 Mở Menu"
+        PersistentToggleBtn.BackgroundColor3 = COLOR_TITLE_BG
+    end
+end
+
+PersistentToggleBtn.MouseButton1Click:Connect(function()
+    setMenuVisible(not MainFrame.Visible)
+end)
+
+MinimizeBtn.MouseButton1Click:Connect(function()
+    setMenuVisible(false)
+end)
+
+---------------------------------------------------------
+-- TÍNH NĂNG 4 GÓC KÉO CO GIÃN
+---------------------------------------------------------
+local minSize = Vector2.new(480, 280)
+local maxSize = Vector2.new(950, 650)
+
+local activeResizeCorner = nil 
+local resizeStartMousePos, resizeStartSize, resizeStartPos
+
+local cornersInfo = {
+    {Name = "TL", Icon = "◤", Pos = UDim2.new(0, 0, 0, 0)},
+    {Name = "TR", Icon = "◥", Pos = UDim2.new(1, -20, 0, 0)},
+    {Name = "BL", Icon = "◣", Pos = UDim2.new(0, 0, 1, -20)},
+    {Name = "BR", Icon = "◢", Pos = UDim2.new(1, -20, 1, -20)}
+}
+
+for _, info in ipairs(cornersInfo) do
+    local handle = Instance.new("TextButton")
+    handle.Name = "ResizeCorner_" .. info.Name
+    handle.Size = UDim2.new(0, 20, 0, 20) 
+    handle.Position = info.Pos
+    handle.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    handle.BackgroundTransparency = 0.4
+    handle.Text = info.Icon
+    handle.TextColor3 = TEXT_DARK
+    handle.Font = Enum.Font.SourceSansBold
+    handle.TextSize = 13 
+    handle.ZIndex = 12
+    handle.Parent = MainFrame
+
+    local cornerShape = Instance.new("UICorner")
+    cornerShape.CornerRadius = UDim.new(0, 4)
+    cornerShape.Parent = handle
+
+    handle.InputBegan:Connect(function(input)
+        if (input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch) and activeResizeCorner == nil then
+            activeResizeCorner = info.Name
+            resizeStartMousePos = UserInputService:GetMouseLocation()
+            resizeStartSize = MainFrame.AbsoluteSize
+            resizeStartPos = MainFrame.AbsolutePosition
+        end
+    end)
+end
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        activeResizeCorner = nil
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if activeResizeCorner and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local currentMousePos = UserInputService:GetMouseLocation()
+        local delta = currentMousePos - resizeStartMousePos
+
+        local rawW = resizeStartSize.X
+        local rawH = resizeStartSize.Y
+
+        if activeResizeCorner == "BR" then
+            rawW = resizeStartSize.X + delta.X
+            rawH = resizeStartSize.Y + delta.Y
+        elseif activeResizeCorner == "BL" then
+            rawW = resizeStartSize.X - delta.X
+            rawH = resizeStartSize.Y + delta.Y
+        elseif activeResizeCorner == "TR" then
+            rawW = resizeStartSize.X + delta.X
+            rawH = resizeStartSize.Y - delta.Y
+        elseif activeResizeCorner == "TL" then
+            rawW = resizeStartSize.X - delta.X
+            rawH = resizeStartSize.Y - delta.Y
+        end
+
+        local actualW = math.clamp(rawW, minSize.X, maxSize.X)
+        local actualH = math.clamp(rawH, minSize.Y, maxSize.Y)
+
+        local deltaW = actualW - resizeStartSize.X
+        local deltaH = actualH - resizeStartSize.Y
+
+        local newX = resizeStartPos.X
+        local newY = resizeStartPos.Y
+
+        if activeResizeCorner == "BL" or activeResizeCorner == "TL" then
+            newX = resizeStartPos.X - deltaW
+        end
+        if activeResizeCorner == "TR" or activeResizeCorner == "TL" then
+            newY = resizeStartPos.Y - deltaH
+        end
+
+        MainFrame.Size = UDim2.new(0, actualW, 0, actualH)
+        MainFrame.Position = UDim2.new(0, newX, 0, newY)
+    end
+end)
+
+---------------------------------------------------------
+-- THANH TAB BAR
+---------------------------------------------------------
+local TabBarFrame = Instance.new("Frame")
+TabBarFrame.Size = UDim2.new(1, -24, 0, 30)
+TabBarFrame.Position = UDim2.new(0, 12, 0, 40)
+TabBarFrame.BackgroundTransparency = 1
+TabBarFrame.Parent = MainFrame
+
+-- TAB 1
+local PlayersTabBtn = Instance.new("TextButton")
+PlayersTabBtn.Size = UDim2.new(0.32, 0, 1, 0)
+PlayersTabBtn.Position = UDim2.new(0, 0, 0, 0)
+PlayersTabBtn.BackgroundColor3 = COLOR_TAB_ACTIVE
+PlayersTabBtn.BackgroundTransparency = 0.3
+PlayersTabBtn.Text = "👤 NGƯỜI CHƠI"
+PlayersTabBtn.TextColor3 = TEXT_DARK
+PlayersTabBtn.Font = Enum.Font.SourceSansBold
+PlayersTabBtn.TextSize = 12
+PlayersTabBtn.Parent = TabBarFrame
+
+local PlayersTabCorner = Instance.new("UICorner")
+PlayersTabCorner.CornerRadius = UDim.new(0, 6)
+PlayersTabCorner.Parent = PlayersTabBtn
+
+-- TAB 2
+local LocationsTabBtn = Instance.new("TextButton")
+LocationsTabBtn.Size = UDim2.new(0.32, 0, 1, 0)
+LocationsTabBtn.Position = UDim2.new(0.34, 0, 0, 0)
+LocationsTabBtn.BackgroundColor3 = COLOR_TAB_INACTIVE
+LocationsTabBtn.BackgroundTransparency = 0.5
+LocationsTabBtn.Text = "📍 TỌA ĐỘ ĐÃ LƯU"
+LocationsTabBtn.TextColor3 = TEXT_DARK
+LocationsTabBtn.Font = Enum.Font.SourceSansBold
+LocationsTabBtn.TextSize = 12
+LocationsTabBtn.Parent = TabBarFrame
+
+local LocationsTabCorner = Instance.new("UICorner")
+LocationsTabCorner.CornerRadius = UDim.new(0, 6)
+LocationsTabCorner.Parent = LocationsTabBtn
+
+-- TAB 3
+local WallsTabBtn = Instance.new("TextButton")
+WallsTabBtn.Size = UDim2.new(0.32, 0, 1, 0)
+WallsTabBtn.Position = UDim2.new(0.68, 0, 0, 0)
+WallsTabBtn.BackgroundColor3 = COLOR_TAB_INACTIVE
+WallsTabBtn.BackgroundTransparency = 0.5
+WallsTabBtn.Text = "🧱 TẠO TƯỜNG KÍNH"
+WallsTabBtn.TextColor3 = TEXT_DARK
+WallsTabBtn.Font = Enum.Font.SourceSansBold
+WallsTabBtn.TextSize = 12
+WallsTabBtn.Parent = TabBarFrame
+
+local WallsTabCorner = Instance.new("UICorner")
+WallsTabCorner.CornerRadius = UDim.new(0, 6)
+WallsTabCorner.Parent = WallsTabBtn
+
+---------------------------------------------------------
+-- TAB 1: NGƯỜI CHƠI (PLAYERS PAGE)
+---------------------------------------------------------
+local PlayersPage = Instance.new("Frame")
+PlayersPage.Size = UDim2.new(1, -24, 1, -80)
+PlayersPage.Position = UDim2.new(0, 12, 0, 75)
+PlayersPage.BackgroundTransparency = 1
+PlayersPage.Visible = true
+PlayersPage.Parent = MainFrame
+
+-- Ô Tìm kiếm
+local SearchBox = Instance.new("TextBox")
+SearchBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+SearchBox.BackgroundTransparency = 0.4
+SearchBox.PlaceholderText = "🔍 Tìm tên..."
+SearchBox.PlaceholderColor3 = Color3.fromRGB(120, 120, 130)
+SearchBox.Text = ""
+SearchBox.TextColor3 = TEXT_DARK
+SearchBox.Font = Enum.Font.SourceSans
+SearchBox.TextSize = 12
+SearchBox.Parent = PlayersPage
+
+-- Nút Tải lại
+local RefreshBtn = Instance.new("TextButton")
+RefreshBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+RefreshBtn.BackgroundTransparency = 0.4
+RefreshBtn.Text = "🔄 Tải Lại"
+RefreshBtn.TextColor3 = TEXT_DARK
+RefreshBtn.Font = Enum.Font.SourceSansBold
+RefreshBtn.TextSize = 11
+RefreshBtn.Parent = PlayersPage
+
+local PlayerList = Instance.new("ScrollingFrame")
+PlayerList.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+PlayerList.BackgroundTransparency = 0.75
+PlayerList.BorderColor3 = Color3.fromRGB(220, 225, 235)
+PlayerList.ScrollBarThickness = 5
+PlayerList.Parent = PlayersPage
+
+local UIListLayout1 = Instance.new("UIListLayout")
+UIListLayout1.Parent = PlayerList
+UIListLayout1.SortOrder = Enum.SortOrder.LayoutOrder
+
+local SplitDivider = Instance.new("TextButton")
+SplitDivider.Name = "SplitDivider"
+SplitDivider.BackgroundColor3 = Color3.fromRGB(210, 215, 225)
+SplitDivider.BackgroundTransparency = 0.2
+SplitDivider.BorderColor3 = Color3.fromRGB(255, 255, 255)
+SplitDivider.BorderSizePixel = 1
+SplitDivider.Text = "┆"
+SplitDivider.TextColor3 = TEXT_DARK
+SplitDivider.Font = Enum.Font.SourceSansBold
+SplitDivider.TextSize = 13
+SplitDivider.ZIndex = 8
+SplitDivider.Parent = PlayersPage
+
+local SplitterCorner = Instance.new("UICorner")
+SplitterCorner.CornerRadius = UDim.new(0, 4)
+SplitterCorner.Parent = SplitDivider
+
+---------------------------------------------------------
+-- CỘT PHẢI TAB PLAYERS
+---------------------------------------------------------
+local P_RightPanel = Instance.new("ScrollingFrame")
+P_RightPanel.Name = "P_RightPanel"
+P_RightPanel.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+P_RightPanel.BackgroundTransparency = 0.65
+P_RightPanel.BorderColor3 = Color3.fromRGB(220, 225, 235)
+P_RightPanel.ScrollBarThickness = 4
+P_RightPanel.ScrollBarImageColor3 = Color3.fromRGB(180, 185, 195)
+P_RightPanel.BorderSizePixel = 0
+P_RightPanel.ClipsDescendants = true
+P_RightPanel.AutomaticCanvasSize = Enum.AutomaticSize.Y
+P_RightPanel.CanvasSize = UDim2.new(0, 0, 0, 0)
+P_RightPanel.Parent = PlayersPage
+
+local P_PanelCorner = Instance.new("UICorner")
+P_PanelCorner.CornerRadius = UDim.new(0, 6)
+P_PanelCorner.Parent = P_RightPanel
+
+local P_PanelLayout = Instance.new("UIListLayout")
+P_PanelLayout.SortOrder = Enum.SortOrder.LayoutOrder
+P_PanelLayout.Padding = UDim.new(0, 4)
+P_PanelLayout.Parent = P_RightPanel
+
+local P_PanelPadding = Instance.new("UIPadding")
+P_PanelPadding.PaddingTop = UDim.new(0, 4)
+P_PanelPadding.PaddingBottom = UDim.new(0, 6)
+P_PanelPadding.PaddingLeft = UDim.new(0, 4)
+P_PanelPadding.PaddingRight = UDim.new(0, 6)
+P_PanelPadding.Parent = P_RightPanel
+
+-- 0. NÚT XUYÊN TƯỜNG THẢM KÍNH (NẰM TRÊN CÙNG)
+local StandaloneNoclipBtn = Instance.new("TextButton")
+StandaloneNoclipBtn.LayoutOrder = 1
+StandaloneNoclipBtn.Size = UDim2.new(1, 0, 0, 24)
+StandaloneNoclipBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+StandaloneNoclipBtn.BackgroundTransparency = 0.3
+StandaloneNoclipBtn.Text = "👻 Xuyên Tường Thảm Kính: OFF"
+StandaloneNoclipBtn.TextColor3 = TEXT_DARK
+StandaloneNoclipBtn.Font = Enum.Font.SourceSansBold
+StandaloneNoclipBtn.TextSize = 11
+StandaloneNoclipBtn.Parent = P_RightPanel
+
+local NoclipCorner = Instance.new("UICorner")
+NoclipCorner.CornerRadius = UDim.new(0, 4)
+NoclipCorner.Parent = StandaloneNoclipBtn
+
+-- 1. NÚT BU NGƯỜI CHƠI (BAY BÁM ĐUỔI REALTIME)
+local FollowPlayerBtn = Instance.new("TextButton")
+FollowPlayerBtn.LayoutOrder = 2
+FollowPlayerBtn.Size = UDim2.new(1, 0, 0, 24)
+FollowPlayerBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+FollowPlayerBtn.BackgroundTransparency = 0.3
+FollowPlayerBtn.Text = "🧲 Bu Người Chơi: OFF"
+FollowPlayerBtn.TextColor3 = TEXT_DARK
+FollowPlayerBtn.Font = Enum.Font.SourceSansBold
+FollowPlayerBtn.TextSize = 11
+FollowPlayerBtn.Parent = P_RightPanel
+
+local FollowCorner = Instance.new("UICorner")
+FollowCorner.CornerRadius = UDim.new(0, 4)
+FollowCorner.Parent = FollowPlayerBtn
+
+-- 2. ESP Player All
+local EspAllBtn = Instance.new("TextButton")
+EspAllBtn.LayoutOrder = 3
+EspAllBtn.Size = UDim2.new(1, 0, 0, 24)
+EspAllBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+EspAllBtn.BackgroundTransparency = 0.3
+EspAllBtn.Text = "📡 ESP Player Tất Cả: OFF"
+EspAllBtn.TextColor3 = TEXT_DARK
+EspAllBtn.Font = Enum.Font.SourceSansBold
+EspAllBtn.TextSize = 11
+EspAllBtn.Parent = P_RightPanel
+
+local EspAllCorner = Instance.new("UICorner")
+EspAllCorner.CornerRadius = UDim.new(0, 4)
+EspAllCorner.Parent = EspAllBtn
+
+-- 3. ESP Player Single
+local EspSingleBtn = Instance.new("TextButton")
+EspSingleBtn.LayoutOrder = 4
+EspSingleBtn.Size = UDim2.new(1, 0, 0, 24)
+EspSingleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+EspSingleBtn.BackgroundTransparency = 0.3
+EspSingleBtn.Text = "🎯 ESP Player Lẻ: OFF"
+EspSingleBtn.TextColor3 = TEXT_DARK
+EspSingleBtn.Font = Enum.Font.SourceSansBold
+EspSingleBtn.TextSize = 11
+EspSingleBtn.Parent = P_RightPanel
+
+local EspSingleCorner = Instance.new("UICorner")
+EspSingleCorner.CornerRadius = UDim.new(0, 4)
+EspSingleCorner.Parent = EspSingleBtn
+
+-- 4. Nút Phát Sáng
+local GlowToggleBtn = Instance.new("TextButton")
+GlowToggleBtn.LayoutOrder = 5
+GlowToggleBtn.Size = UDim2.new(1, 0, 0, 24)
+GlowToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+GlowToggleBtn.BackgroundTransparency = 0.3
+GlowToggleBtn.Text = "💡 Phát Sáng Nhân Vật: OFF"
+GlowToggleBtn.TextColor3 = TEXT_DARK
+GlowToggleBtn.Font = Enum.Font.SourceSansBold
+GlowToggleBtn.TextSize = 11
+GlowToggleBtn.Parent = P_RightPanel
+
+local GlowCorner = Instance.new("UICorner")
+GlowCorner.CornerRadius = UDim.new(0, 4)
+GlowCorner.Parent = GlowToggleBtn
+
+-- 5. Bán Kính Phát Sáng Label & Box
+local GlowRangeLabel = Instance.new("TextLabel")
+GlowRangeLabel.LayoutOrder = 6
+GlowRangeLabel.Size = UDim2.new(1, 0, 0, 14)
+GlowRangeLabel.BackgroundTransparency = 1
+GlowRangeLabel.Text = "💡 Bán kính sáng (Studs):"
+GlowRangeLabel.TextColor3 = TEXT_DARK
+GlowRangeLabel.TextXAlignment = Enum.TextXAlignment.Left
+GlowRangeLabel.Font = Enum.Font.SourceSansBold
+GlowRangeLabel.TextSize = 10
+GlowRangeLabel.Parent = P_RightPanel
+
+local GlowRangeBox = Instance.new("TextBox")
+GlowRangeBox.LayoutOrder = 7
+GlowRangeBox.Size = UDim2.new(1, 0, 0, 22)
+GlowRangeBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+GlowRangeBox.BackgroundTransparency = 0.3
+GlowRangeBox.Text = "50"
+GlowRangeBox.TextColor3 = TEXT_DARK
+GlowRangeBox.Font = Enum.Font.SourceSansBold
+GlowRangeBox.TextSize = 11
+GlowRangeBox.Parent = P_RightPanel
+
+-- 6. Chiều cao Label & Box
+local P_HeightLabel = Instance.new("TextLabel")
+P_HeightLabel.LayoutOrder = 8
+P_HeightLabel.Size = UDim2.new(1, 0, 0, 14)
+P_HeightLabel.BackgroundTransparency = 1
+P_HeightLabel.Text = "📏 Chiều cao (Height):"
+P_HeightLabel.TextColor3 = TEXT_DARK
+P_HeightLabel.TextXAlignment = Enum.TextXAlignment.Left
+P_HeightLabel.Font = Enum.Font.SourceSansBold
+P_HeightLabel.TextSize = 10
+P_HeightLabel.Parent = P_RightPanel
+
+local P_HeightBox = Instance.new("TextBox")
+P_HeightBox.LayoutOrder = 9
+P_HeightBox.Size = UDim2.new(1, 0, 0, 22)
+P_HeightBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+P_HeightBox.BackgroundTransparency = 0.3
+P_HeightBox.Text = "150"
+P_HeightBox.TextColor3 = TEXT_DARK
+P_HeightBox.Font = Enum.Font.SourceSansBold
+P_HeightBox.TextSize = 11
+P_HeightBox.Parent = P_RightPanel
+
+-- 7. Tốc độ Label & Box
+local P_SpeedLabel = Instance.new("TextLabel")
+P_SpeedLabel.LayoutOrder = 10
 P_SpeedLabel.Size = UDim2.new(1, 0, 0, 14)
 P_SpeedLabel.BackgroundTransparency = 1
 P_SpeedLabel.Text = "⚡ Tốc độ (Speed):"
@@ -637,7 +1615,7 @@ P_SpeedLabel.TextSize = 10
 P_SpeedLabel.Parent = P_RightPanel
 
 local P_SpeedBox = Instance.new("TextBox")
-P_SpeedBox.LayoutOrder = 10
+P_SpeedBox.LayoutOrder = 11
 P_SpeedBox.Size = UDim2.new(1, 0, 0, 22)
 P_SpeedBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 P_SpeedBox.BackgroundTransparency = 0.3
@@ -649,7 +1627,7 @@ P_SpeedBox.Parent = P_RightPanel
 
 -- 8. Visual Height Button
 local HeightVisualBtn = Instance.new("TextButton")
-HeightVisualBtn.LayoutOrder = 11
+HeightVisualBtn.LayoutOrder = 12
 HeightVisualBtn.Size = UDim2.new(1, 0, 0, 24)
 HeightVisualBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
 HeightVisualBtn.BackgroundTransparency = 0.3
@@ -1441,7 +2419,7 @@ LocalPlayer.CharacterAdded:Connect(function()
 end)
 
 ---------------------------------------------------------
--- LOGIC CƠ BẢN & XỬ LÝ VA CHẠM
+-- LOGIC CƠ BẢN & XỬ LÝ VA CHẠM NOCLIP
 ---------------------------------------------------------
 local startFly
 local stopFly
@@ -1484,7 +2462,6 @@ local function resetCharacterPhysics()
     local char = LocalPlayer.Character
     if not char then return end
 
-    -- Khôi phục va chạm chuẩn của Roblox
     for _, part in pairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
             if part.Name == "HumanoidRootPart" then
@@ -1502,9 +2479,18 @@ local function resetCharacterPhysics()
     end
 end
 
+-- TẮT VÀ XÓA THẢM KÍNH
+local function removeCarpet()
+    if noclipCarpetPart then
+        noclipCarpetPart:Destroy()
+        noclipCarpetPart = nil
+    end
+    NoclipHUD.Visible = false
+end
+
 -- CẬP NHẬT TRẠNG THÁI NOCLIP TỔNG TỂ
 local function updateNoclipState()
-    local shouldNoclip = followPlayerActive or isFlying
+    local shouldNoclip = standaloneNoclipActive or followPlayerActive or isFlying
 
     if shouldNoclip then
         if not noclipConnection then
@@ -1512,7 +2498,7 @@ local function updateNoclipState()
                 local char = LocalPlayer.Character
                 if char then
                     for _, part in pairs(char:GetDescendants()) do
-                        if part:IsA("BasePart") then 
+                        if part:IsA("BasePart") and part ~= noclipCarpetPart then 
                             part.CanCollide = false 
                         end
                     end
@@ -1520,9 +2506,123 @@ local function updateNoclipState()
             end)
         end
     else
+        removeCarpet()
         resetCharacterPhysics()
     end
 end
+
+---------------------------------------------------------
+-- TÍNH NĂNG XUYÊN TƯỜNG CÓ THẢM KÍNH (CARPET NOCLIP SYSTEM)
+---------------------------------------------------------
+local function toggleStandaloneNoclip(state)
+    standaloneNoclipActive = state
+    if standaloneNoclipActive then
+        StandaloneNoclipBtn.Text = "👻 Xuyên Tường Thảm Kính: ON"
+        StandaloneNoclipBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            noclipHeight = hrp.Position.Y - 3.2
+
+            if not noclipCarpetPart then
+                noclipCarpetPart = Instance.new("Part")
+                noclipCarpetPart.Name = "BananaNoclipCarpet"
+                noclipCarpetPart.Material = Enum.Material.Glass
+                noclipCarpetPart.Transparency = 0.5
+                noclipCarpetPart.Color = Color3.fromRGB(0, 220, 255)
+                noclipCarpetPart.Size = Vector3.new(6, 0.5, 6)
+                noclipCarpetPart.Anchored = true
+                noclipCarpetPart.CanCollide = true
+                noclipCarpetPart.Parent = workspace
+            end
+
+            NoclipHUD.Visible = true
+        end
+    else
+        StandaloneNoclipBtn.Text = "👻 Xuyên Tường Thảm Kính: OFF"
+        StandaloneNoclipBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+        removeCarpet()
+    end
+    updateNoclipState()
+end
+
+StandaloneNoclipBtn.MouseButton1Click:Connect(function()
+    toggleStandaloneNoclip(not standaloneNoclipActive)
+end)
+
+HudOffBtn.MouseButton1Click:Connect(function()
+    toggleStandaloneNoclip(false)
+end)
+
+-- Sự kiện nhấn giữ Bay Lên / Bay Xuống trên HUD
+HudUpBtn.MouseButton1Down:Connect(function() isNoclipUpHeld = true end)
+HudUpBtn.MouseButton1Up:Connect(function() isNoclipUpHeld = false end)
+HudUpBtn.MouseLeave:Connect(function() isNoclipUpHeld = false end)
+
+HudDownBtn.MouseButton1Down:Connect(function() isNoclipDownHeld = true end)
+HudDownBtn.MouseButton1Up:Connect(function() isNoclipDownHeld = false end)
+HudDownBtn.MouseLeave:Connect(function() isNoclipDownHeld = false end)
+
+-- Hỗ trợ giữ nút trên điện thoại
+HudUpBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then isNoclipUpHeld = true end
+end)
+HudUpBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then isNoclipUpHeld = false end
+end)
+
+HudDownBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then isNoclipDownHeld = true end
+end)
+HudDownBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then isNoclipDownHeld = false end
+end)
+
+-- Nút Toggle Xuyên Thẳng (Đâm xuyên bức tường hẹp/mọi góc độ)
+HudStraightBtn.MouseButton1Click:Connect(function()
+    straightNoclipActive = not straightNoclipActive
+    if straightNoclipActive then
+        HudStraightBtn.Text = "➡️ Xuyên Thẳng: ON"
+        HudStraightBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        HudStraightBtn.TextColor3 = TEXT_DARK
+    else
+        HudStraightBtn.Text = "➡️ Xuyên Thẳng: OFF"
+        HudStraightBtn.BackgroundColor3 = Color3.fromRGB(180, 130, 240)
+        HudStraightBtn.TextColor3 = TEXT_LIGHT
+    end
+end)
+
+-- VÒNG LẶP CẬP NHẬT THẢM KÍNH VÀ XUYÊN TƯỜNG REALTIME
+RunService.Heartbeat:Connect(function(dt)
+    if standaloneNoclipActive and noclipCarpetPart then
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+        if hrp then
+            local vertSpeed = 25 -- Tốc độ nâng/hạ
+
+            -- Bay Lên / Bay Xuống
+            if isNoclipUpHeld then
+                noclipHeight = noclipHeight + (vertSpeed * dt)
+                hrp.CFrame = CFrame.new(hrp.Position.X, noclipHeight + 3.2, hrp.Position.Z)
+            elseif isNoclipDownHeld then
+                noclipHeight = noclipHeight - (vertSpeed * dt)
+                hrp.CFrame = CFrame.new(hrp.Position.X, noclipHeight + 3.2, hrp.Position.Z)
+            end
+
+            -- Cập nhật thảm kính
+            noclipCarpetPart.CFrame = CFrame.new(hrp.Position.X, noclipHeight, hrp.Position.Z)
+
+            -- Xuyên Thẳng (Dù có bức tường hẹp hay góc nhỏ đều đâm xuyên qua)
+            if straightNoclipActive and hum and hum.MoveDirection.Magnitude > 0 then
+                local pushSpeed = 0.6
+                hrp.CFrame = hrp.CFrame + (hum.MoveDirection * pushSpeed)
+            end
+        end
+    end
+end)
 
 ---------------------------------------------------------
 -- HỆ THỐNG BU NGƯỜI CHƠI (SMOOTH REALTIME FLY FOLLOW)
@@ -2245,6 +3345,7 @@ end
 ---------------------------------------------------------
 CloseBtn.MouseButton1Click:Connect(function()
     stopFollow()
+    toggleStandaloneNoclip(false)
     updateNoclipState()
     removeAllESP()
     removeAllLocESP()
