@@ -1,6 +1,7 @@
 --[[
     FLY TO PLAYER, SAVED LOCATIONS & TRANSPARENT WALL CREATOR
-    - ĐÃ XÓA: TÍNH NĂNG XUYÊN TƯỜNG THẢM KÍNH & CẤU HÌNH KÍCH THƯỚC THẢM
+    - NÂNG CẤP: THÊM NÚT GIỮ ĐỂ DI CHUYỂN MENU "🖐️ DI CHUYỂN" BÊN PHẢI TIÊU ĐỀ
+    - CƠ CHẾ: CHỈ KÉO ĐƯỢC MENU KHI NHẤN GIỮ NÚT DI CHUYỂN, BỎ TAY RA SẼ CỐ ĐỊNH MENU
     - GIỮ NGUYÊN TOÀN BỘ CÁC TÍNH NĂNG: FLY PLAYER/LOCATIONS/WALL, BU NGƯỜI CHƠI, ESP REALTIME, WALL CREATOR, GLOW
 --]]
 
@@ -103,9 +104,9 @@ local MainCorner = Instance.new("UICorner")
 MainCorner.CornerRadius = UDim.new(0, 10)
 MainCorner.Parent = MainFrame
 
--- Title Bar
+-- Title Bar (Thu hẹp độ rộng để chừa chỗ cho Nút Di Chuyển)
 local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, -60, 0, 34)
+Title.Size = UDim2.new(1, -150, 0, 34)
 Title.Position = UDim2.new(0, 0, 0, 0)
 Title.BackgroundColor3 = COLOR_TITLE_BG
 Title.BackgroundTransparency = 0.4
@@ -114,40 +115,30 @@ Title.TextColor3 = TEXT_DARK
 Title.TextSize = 13
 Title.Font = Enum.Font.SourceSansBold
 Title.TextXAlignment = Enum.TextXAlignment.Left
-Title.Active = true
+Title.Active = false
 Title.Parent = MainFrame
 
 local TitleCorner = Instance.new("UICorner")
 TitleCorner.CornerRadius = UDim.new(0, 10)
 TitleCorner.Parent = Title
 
----------------------------------------------------------
--- CƠ CHẾ KÉO MENU (SMOOTH DRAG TITLE BAR)
----------------------------------------------------------
-local draggingMain = false
-local dragStartMouse, dragStartPos
+-- NÚT GIỮ ĐỂ DI CHUYỂN MENU (DRAG HANDLE BUTTON)
+local DragHandleBtn = Instance.new("TextButton")
+DragHandleBtn.Name = "DragHandleBtn"
+DragHandleBtn.Size = UDim2.new(0, 85, 0, 24)
+DragHandleBtn.Position = UDim2.new(1, -145, 0, 5)
+DragHandleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+DragHandleBtn.BackgroundTransparency = 0.3
+DragHandleBtn.Text = "🖐️ Di Chuyển"
+DragHandleBtn.TextColor3 = TEXT_DARK
+DragHandleBtn.Font = Enum.Font.SourceSansBold
+DragHandleBtn.TextSize = 11
+DragHandleBtn.ZIndex = 5
+DragHandleBtn.Parent = MainFrame
 
-Title.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        draggingMain = true
-        dragStartMouse = UserInputService:GetMouseLocation()
-        dragStartPos = MainFrame.AbsolutePosition
-    end
-end)
-
-UserInputService.InputEnded:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-        draggingMain = false
-    end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-    if draggingMain and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
-        local currentMouse = UserInputService:GetMouseLocation()
-        local delta = currentMouse - dragStartMouse
-        MainFrame.Position = UDim2.new(0, dragStartPos.X + delta.X, 0, dragStartPos.Y + delta.Y)
-    end
-end)
+local DragCorner = Instance.new("UICorner")
+DragCorner.CornerRadius = UDim.new(0, 4)
+DragCorner.Parent = DragHandleBtn
 
 -- Minimize Button (-)
 local MinimizeBtn = Instance.new("TextButton")
@@ -174,6 +165,43 @@ CloseBtn.Font = Enum.Font.SourceSansBold
 CloseBtn.TextSize = 13
 CloseBtn.ZIndex = 5
 CloseBtn.Parent = MainFrame
+
+---------------------------------------------------------
+-- CƠ CHẾ KÉO MENU (CHỈ KÉO KHI NHẤN GIỮ NÚT "🖐️ DI CHUYỂN")
+---------------------------------------------------------
+local draggingMain = false
+local dragStartMouse, dragStartPos
+
+DragHandleBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        draggingMain = true
+        dragStartMouse = UserInputService:GetMouseLocation()
+        dragStartPos = MainFrame.AbsolutePosition
+        
+        -- Hiệu ứng đổi màu nút khi đang giữ để kéo
+        DragHandleBtn.BackgroundColor3 = COLOR_GREEN
+        DragHandleBtn.TextColor3 = TEXT_LIGHT
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+        if draggingMain then
+            draggingMain = false
+            -- Khôi phục màu nút ban đầu
+            DragHandleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+            DragHandleBtn.TextColor3 = TEXT_DARK
+        end
+    end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+    if draggingMain and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+        local currentMouse = UserInputService:GetMouseLocation()
+        local delta = currentMouse - dragStartMouse
+        MainFrame.Position = UDim2.new(0, dragStartPos.X + delta.X, 0, dragStartPos.Y + delta.Y)
+    end
+end)
 
 ---------------------------------------------------------
 -- NÚT BẬT / ẨN MENU LUÔN HIỂN THỊ
