@@ -1,6 +1,7 @@
 --[[
     FLY TO PLAYER, SAVED LOCATIONS & TRANSPARENT WALL CREATOR
     - NÂNG CẤP NOCLIP (XUYÊN TƯỜNG): TỰ ĐỘNG BẬT KHI BAY/BU NGƯỜI VÀ TỰ ĐỘNG TẮT KHI DỪNG HOẶC ĐẾN NƠI.
+    - THÊM TÍNH NĂNG CHỐNG XUYÊN TƯỜNG (ANTI-NOCLIP): KHÓA VA CHẠM VẬT LÝ KHÔNG CHO BẢN THÂN XUYÊN TƯỜNG.
     - GIỮ NGUYÊN TOÀN BỘ TÍNH NĂNG: DRAG HANDLE, RESIZE 4 GÓC, ESP REALTIME, WALL CREATOR, GLOW, TRỤ VISUAL
 --]]
 
@@ -34,6 +35,10 @@ local isFlying = false
 local stopRequested = false
 local currentTween = nil
 local noclipConnection = nil
+
+-- Anti-Noclip Variable
+local antiNoclipActive = false
+local antiNoclipConnection = nil
 
 -- Follow / Bu Người Variables
 local followPlayerActive = false
@@ -514,9 +519,27 @@ P_PanelPadding.PaddingLeft = UDim.new(0, 4)
 P_PanelPadding.PaddingRight = UDim.new(0, 6)
 P_PanelPadding.Parent = P_RightPanel
 
--- Controls Cột Phải Tab 1
+---------------------------------------------------------
+-- CONTROLS CỘT PHẢI TAB 1 (NGƯỜI CHƠI)
+---------------------------------------------------------
+-- NÚT CHỐNG XUYÊN TƯỜNG (ANTI-NOCLIP) - NẰM TRÊN NÚT BU NGƯỜI CHƠI
+local AntiNoclipBtn = Instance.new("TextButton")
+AntiNoclipBtn.LayoutOrder = 1
+AntiNoclipBtn.Size = UDim2.new(1, 0, 0, 24)
+AntiNoclipBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+AntiNoclipBtn.BackgroundTransparency = 0.3
+AntiNoclipBtn.Text = "🛡️ Chống Xuyên Tường: OFF"
+AntiNoclipBtn.TextColor3 = TEXT_DARK
+AntiNoclipBtn.Font = Enum.Font.SourceSansBold
+AntiNoclipBtn.TextSize = 11
+AntiNoclipBtn.Parent = P_RightPanel
+
+local AntiNoclipCorner = Instance.new("UICorner")
+AntiNoclipCorner.CornerRadius = UDim.new(0, 4)
+AntiNoclipCorner.Parent = AntiNoclipBtn
+
 local FollowPlayerBtn = Instance.new("TextButton")
-FollowPlayerBtn.LayoutOrder = 1
+FollowPlayerBtn.LayoutOrder = 2
 FollowPlayerBtn.Size = UDim2.new(1, 0, 0, 24)
 FollowPlayerBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
 FollowPlayerBtn.BackgroundTransparency = 0.3
@@ -531,7 +554,7 @@ FollowCorner.CornerRadius = UDim.new(0, 4)
 FollowCorner.Parent = FollowPlayerBtn
 
 local EspAllBtn = Instance.new("TextButton")
-EspAllBtn.LayoutOrder = 2
+EspAllBtn.LayoutOrder = 3
 EspAllBtn.Size = UDim2.new(1, 0, 0, 24)
 EspAllBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
 EspAllBtn.BackgroundTransparency = 0.3
@@ -546,7 +569,7 @@ EspAllCorner.CornerRadius = UDim.new(0, 4)
 EspAllCorner.Parent = EspAllBtn
 
 local EspSingleBtn = Instance.new("TextButton")
-EspSingleBtn.LayoutOrder = 3
+EspSingleBtn.LayoutOrder = 4
 EspSingleBtn.Size = UDim2.new(1, 0, 0, 24)
 EspSingleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
 EspSingleBtn.BackgroundTransparency = 0.3
@@ -561,7 +584,7 @@ EspSingleCorner.CornerRadius = UDim.new(0, 4)
 EspSingleCorner.Parent = EspSingleBtn
 
 local GlowToggleBtn = Instance.new("TextButton")
-GlowToggleBtn.LayoutOrder = 4
+GlowToggleBtn.LayoutOrder = 5
 GlowToggleBtn.Size = UDim2.new(1, 0, 0, 24)
 GlowToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
 GlowToggleBtn.BackgroundTransparency = 0.3
@@ -576,7 +599,7 @@ GlowCorner.CornerRadius = UDim.new(0, 4)
 GlowCorner.Parent = GlowToggleBtn
 
 local GlowRangeLabel = Instance.new("TextLabel")
-GlowRangeLabel.LayoutOrder = 5
+GlowRangeLabel.LayoutOrder = 6
 GlowRangeLabel.Size = UDim2.new(1, 0, 0, 14)
 GlowRangeLabel.BackgroundTransparency = 1
 GlowRangeLabel.Text = "💡 Bán kính sáng (Studs):"
@@ -587,7 +610,7 @@ GlowRangeLabel.TextSize = 10
 GlowRangeLabel.Parent = P_RightPanel
 
 local GlowRangeBox = Instance.new("TextBox")
-GlowRangeBox.LayoutOrder = 6
+GlowRangeBox.LayoutOrder = 7
 GlowRangeBox.Size = UDim2.new(1, 0, 0, 22)
 GlowRangeBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 GlowRangeBox.BackgroundTransparency = 0.3
@@ -598,7 +621,7 @@ GlowRangeBox.TextSize = 11
 GlowRangeBox.Parent = P_RightPanel
 
 local P_HeightLabel = Instance.new("TextLabel")
-P_HeightLabel.LayoutOrder = 7
+P_HeightLabel.LayoutOrder = 8
 P_HeightLabel.Size = UDim2.new(1, 0, 0, 14)
 P_HeightLabel.BackgroundTransparency = 1
 P_HeightLabel.Text = "📏 Chiều cao (Height):"
@@ -609,7 +632,7 @@ P_HeightLabel.TextSize = 10
 P_HeightLabel.Parent = P_RightPanel
 
 local P_HeightBox = Instance.new("TextBox")
-P_HeightBox.LayoutOrder = 8
+P_HeightBox.LayoutOrder = 9
 P_HeightBox.Size = UDim2.new(1, 0, 0, 22)
 P_HeightBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 P_HeightBox.BackgroundTransparency = 0.3
@@ -620,7 +643,7 @@ P_HeightBox.TextSize = 11
 P_HeightBox.Parent = P_RightPanel
 
 local P_SpeedLabel = Instance.new("TextLabel")
-P_SpeedLabel.LayoutOrder = 9
+P_SpeedLabel.LayoutOrder = 10
 P_SpeedLabel.Size = UDim2.new(1, 0, 0, 14)
 P_SpeedLabel.BackgroundTransparency = 1
 P_SpeedLabel.Text = "⚡ Tốc độ (Speed):"
@@ -631,7 +654,7 @@ P_SpeedLabel.TextSize = 10
 P_SpeedLabel.Parent = P_RightPanel
 
 local P_SpeedBox = Instance.new("TextBox")
-P_SpeedBox.LayoutOrder = 10
+P_SpeedBox.LayoutOrder = 11
 P_SpeedBox.Size = UDim2.new(1, 0, 0, 22)
 P_SpeedBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 P_SpeedBox.BackgroundTransparency = 0.3
@@ -642,7 +665,7 @@ P_SpeedBox.TextSize = 11
 P_SpeedBox.Parent = P_RightPanel
 
 local HeightVisualBtn = Instance.new("TextButton")
-HeightVisualBtn.LayoutOrder = 11
+HeightVisualBtn.LayoutOrder = 12
 HeightVisualBtn.Size = UDim2.new(1, 0, 0, 24)
 HeightVisualBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
 HeightVisualBtn.BackgroundTransparency = 0.3
@@ -1402,7 +1425,7 @@ LocalPlayer.CharacterAdded:Connect(function()
 end)
 
 ---------------------------------------------------------
--- QUẢN LÝ NOCLIP (XUYÊN TƯỜNG) NÂNG CẤP CHUẨN XÁC
+-- QUẢN LÝ NOCLIP (XUYÊN TƯỜNG) & CHỐNG XUYÊN TƯỜNG
 ---------------------------------------------------------
 local startFly
 local stopFly
@@ -1465,8 +1488,45 @@ local function resetCharacterPhysics()
     end
 end
 
--- BẬT / TẮT XUYÊN TƯỜNG THEO TRẠNG THÁI BAY
+-- VÒNG LẶP ÉP VA CHẠM BẢO VỆ CHỐNG XUYÊN TƯỜNG (ANTI-NOCLIP)
+local function applyAntiNoclip()
+    if antiNoclipConnection then
+        antiNoclipConnection:Disconnect()
+        antiNoclipConnection = nil
+    end
+
+    if antiNoclipActive then
+        antiNoclipConnection = RunService.Stepped:Connect(function()
+            local char = LocalPlayer.Character
+            if char then
+                for _, part in pairs(char:GetDescendants()) do
+                    if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
+                        part.CanCollide = true
+                    end
+                end
+            end
+        end)
+    end
+end
+
+-- BẬT / TẮT XUYÊN TƯỜNG THEO TRẠNG THÁI BAY HOẶC CHỐNG XUYÊN TƯỜNG
 local function updateNoclipState()
+    -- ƯU TIÊN 1: Nếu bật CHỐNG XUYÊN TƯỜNG -> Khóa không cho noclip
+    if antiNoclipActive then
+        if noclipConnection then
+            noclipConnection:Disconnect()
+            noclipConnection = nil
+        end
+        applyAntiNoclip()
+        return
+    else
+        if antiNoclipConnection then
+            antiNoclipConnection:Disconnect()
+            antiNoclipConnection = nil
+        end
+    end
+
+    -- ƯU TIÊN 2: Bật Noclip khi Bay / Bu người chơi
     local shouldNoclip = followPlayerActive or isFlying
 
     if shouldNoclip then
@@ -1486,6 +1546,19 @@ local function updateNoclipState()
         resetCharacterPhysics()
     end
 end
+
+-- NÚT BẬT/TẮT CHỐNG XUYÊN TƯỜNG
+AntiNoclipBtn.MouseButton1Click:Connect(function()
+    antiNoclipActive = not antiNoclipActive
+    if antiNoclipActive then
+        AntiNoclipBtn.Text = "🛡️ Chống Xuyên Tường: ON"
+        AntiNoclipBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    else
+        AntiNoclipBtn.Text = "🛡️ Chống Xuyên Tường: OFF"
+        AntiNoclipBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+    end
+    updateNoclipState()
+end)
 
 ---------------------------------------------------------
 -- CƠ CHẾ TWEEN BAY BASE
@@ -2253,6 +2326,7 @@ end)
 CloseBtn.MouseButton1Click:Connect(function()
     stopFollow()
     stopFly()
+    antiNoclipActive = false
     updateNoclipState()
     removeAllESP()
     removeAllLocESP()
