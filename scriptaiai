@@ -3,6 +3,7 @@
     - NÂNG CẤP: THÊM NÚT GIỮ ĐỂ DI CHUYỂN MENU "🖐️ DI CHUYỂN" BÊN PHẢI TIÊU ĐỀ
     - CƠ CHẾ: CHỈ KÉO ĐƯỢC MENU KHI NHẤN GIỮ NÚT DI CHUYỂN, BỎ TAY RA SẼ CỐ ĐỊNH MENU
     - GIỮ NGUYÊN TOÀN BỘ CÁC TÍNH NĂNG: FLY PLAYER/LOCATIONS/WALL, BU NGƯỜI CHƠI, ESP REALTIME, WALL CREATOR, GLOW
+    - THÊM: XUYÊN TƯỜNG KÍNH, TẤM KÍNH DƯỚI CHÂN, BAY LÊN/XUỐNG, XUYÊN TƯỜNG THẲNG
 --]]
 
 -- Đảm bảo game đã load
@@ -74,6 +75,17 @@ local glowLightInstance = nil
 local heightVisualPart = nil
 local heightVisualConn = nil
 local showHeightVisual = false
+
+-- Glass Floor & Directional Noclip Variables (THÊM MỚI)
+local glassFloorActive = false
+local glassFloorPart = nil
+local glassFloorConnection = nil
+local directionalNoclipActive = false
+local directionalNoclipConnection = nil
+local flyUpActive = false
+local flyDownActive = false
+local flyUpConnection = nil
+local flyDownConnection = nil
 
 -- Theme Colors
 local COLOR_MAIN_BG = Color3.fromRGB(245, 247, 252)
@@ -687,6 +699,105 @@ HeightVisualBtn.Parent = P_RightPanel
 local VisualCorner = Instance.new("UICorner")
 VisualCorner.CornerRadius = UDim.new(0, 4)
 VisualCorner.Parent = HeightVisualBtn
+
+-- 9. Nút Bật/Tắt Tấm Kính Dưới Chân (THÊM MỚI)
+local GlassFloorToggleBtn = Instance.new("TextButton")
+GlassFloorToggleBtn.LayoutOrder = 12
+GlassFloorToggleBtn.Size = UDim2.new(1, 0, 0, 24)
+GlassFloorToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+GlassFloorToggleBtn.BackgroundTransparency = 0.3
+GlassFloorToggleBtn.Text = "🪞 Tấm Kính Dưới Chân: OFF"
+GlassFloorToggleBtn.TextColor3 = TEXT_DARK
+GlassFloorToggleBtn.Font = Enum.Font.SourceSansBold
+GlassFloorToggleBtn.TextSize = 11
+GlassFloorToggleBtn.Parent = P_RightPanel
+
+local GlassFloorCorner = Instance.new("UICorner")
+GlassFloorCorner.CornerRadius = UDim.new(0, 4)
+GlassFloorCorner.Parent = GlassFloorToggleBtn
+
+-- 10. Nút Bật/Tắt Xuyên Tường Hướng Thẳng (THÊM MỚI)
+local DirectionalNoclipBtn = Instance.new("TextButton")
+DirectionalNoclipBtn.LayoutOrder = 13
+DirectionalNoclipBtn.Size = UDim2.new(1, 0, 0, 28)
+DirectionalNoclipBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+DirectionalNoclipBtn.BackgroundTransparency = 0.3
+DirectionalNoclipBtn.Text = "🔮 Xuyên Tường Thẳng: OFF"
+DirectionalNoclipBtn.TextColor3 = TEXT_DARK
+DirectionalNoclipBtn.Font = Enum.Font.SourceSansBold
+DirectionalNoclipBtn.TextSize = 11
+DirectionalNoclipBtn.Parent = P_RightPanel
+
+local DirectionalNoclipCorner = Instance.new("UICorner")
+DirectionalNoclipCorner.CornerRadius = UDim.new(0, 4)
+DirectionalNoclipCorner.Parent = DirectionalNoclipBtn
+
+-- 11. Hướng Dẫn Xuyên Tường (THÊM MỚI)
+local NoclipGuideLabel = Instance.new("TextLabel")
+NoclipGuideLabel.LayoutOrder = 14
+NoclipGuideLabel.Size = UDim2.new(1, 0, 0, 20)
+NoclipGuideLabel.BackgroundTransparency = 1
+NoclipGuideLabel.Text = "🎮 W/A/S/D để di chuyển xuyên tường"
+NoclipGuideLabel.TextColor3 = Color3.fromRGB(100, 100, 120)
+NoclipGuideLabel.TextXAlignment = Enum.TextXAlignment.Left
+NoclipGuideLabel.Font = Enum.Font.SourceSansBold
+NoclipGuideLabel.TextSize = 9
+NoclipGuideLabel.Parent = P_RightPanel
+
+-- 12. Nút Bay Lên (Xuyên Tường Lên) (THÊM MỚI)
+local FlyUpBtn = Instance.new("TextButton")
+FlyUpBtn.LayoutOrder = 15
+FlyUpBtn.Size = UDim2.new(1, 0, 0, 30)
+FlyUpBtn.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+FlyUpBtn.BackgroundTransparency = 0.2
+FlyUpBtn.Text = "⬆️ BAY LÊN (Xuyên Tường)"
+FlyUpBtn.TextColor3 = TEXT_LIGHT
+FlyUpBtn.Font = Enum.Font.SourceSansBold
+FlyUpBtn.TextSize = 13
+FlyUpBtn.Parent = P_RightPanel
+
+local FlyUpCorner = Instance.new("UICorner")
+FlyUpCorner.CornerRadius = UDim.new(0, 6)
+FlyUpCorner.Parent = FlyUpBtn
+
+-- 13. Nút Bay Xuống (Xuyên Tường Xuống) (THÊM MỚI)
+local FlyDownBtn = Instance.new("TextButton")
+FlyDownBtn.LayoutOrder = 16
+FlyDownBtn.Size = UDim2.new(1, 0, 0, 30)
+FlyDownBtn.BackgroundColor3 = Color3.fromRGB(255, 150, 50)
+FlyDownBtn.BackgroundTransparency = 0.2
+FlyDownBtn.Text = "⬇️ BAY XUỐNG (Xuyên Tường)"
+FlyDownBtn.TextColor3 = TEXT_LIGHT
+FlyDownBtn.Font = Enum.Font.SourceSansBold
+FlyDownBtn.TextSize = 13
+FlyDownBtn.Parent = P_RightPanel
+
+local FlyDownCorner = Instance.new("UICorner")
+FlyDownCorner.CornerRadius = UDim.new(0, 6)
+FlyDownCorner.Parent = FlyDownBtn
+
+-- 14. Thanh Tốc Độ Bay Lên/Xuống (THÊM MỚI)
+local FlyVerticalSpeedLabel = Instance.new("TextLabel")
+FlyVerticalSpeedLabel.LayoutOrder = 17
+FlyVerticalSpeedLabel.Size = UDim2.new(1, 0, 0, 14)
+FlyVerticalSpeedLabel.BackgroundTransparency = 1
+FlyVerticalSpeedLabel.Text = "⚡ Tốc độ Bay Lên/Xuống:"
+FlyVerticalSpeedLabel.TextColor3 = TEXT_DARK
+FlyVerticalSpeedLabel.TextXAlignment = Enum.TextXAlignment.Left
+FlyVerticalSpeedLabel.Font = Enum.Font.SourceSansBold
+FlyVerticalSpeedLabel.TextSize = 10
+FlyVerticalSpeedLabel.Parent = P_RightPanel
+
+local FlyVerticalSpeedBox = Instance.new("TextBox")
+FlyVerticalSpeedBox.LayoutOrder = 18
+FlyVerticalSpeedBox.Size = UDim2.new(1, 0, 0, 22)
+FlyVerticalSpeedBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+FlyVerticalSpeedBox.BackgroundTransparency = 0.3
+FlyVerticalSpeedBox.Text = "50"
+FlyVerticalSpeedBox.TextColor3 = TEXT_DARK
+FlyVerticalSpeedBox.Font = Enum.Font.SourceSansBold
+FlyVerticalSpeedBox.TextSize = 11
+FlyVerticalSpeedBox.Parent = P_RightPanel
 
 local function updatePlayersLayout()
     local leftRatio = math.clamp(splitRatio, minSplit, maxSplit)
@@ -1458,13 +1569,6 @@ GlowRangeBox:GetPropertyChangedSignal("Text"):Connect(function()
     end
 end)
 
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(0.5)
-    if glowActive then
-        updateGlow()
-    end
-end)
-
 ---------------------------------------------------------
 -- LOGIC CƠ BẢN & XỬ LÝ VA CHẠM
 ---------------------------------------------------------
@@ -2145,6 +2249,285 @@ P_HeightBox:GetPropertyChangedSignal("Text"):Connect(function()
 end)
 
 ---------------------------------------------------------
+-- LOGIC TẤM KÍNH DƯỚI CHÂN (THÊM MỚI)
+---------------------------------------------------------
+local function createGlassFloor()
+    if glassFloorPart and glassFloorPart.Parent then
+        glassFloorPart:Destroy()
+        glassFloorPart = nil
+    end
+    
+    local char = LocalPlayer.Character
+    local hrp = char and char:FindFirstChild("HumanoidRootPart")
+    if not hrp then return end
+    
+    glassFloorPart = Instance.new("Part")
+    glassFloorPart.Name = "BananaGlassFloor"
+    glassFloorPart.Size = Vector3.new(20, 0.2, 20)
+    glassFloorPart.Anchored = true
+    glassFloorPart.CanCollide = true
+    glassFloorPart.Material = Enum.Material.Glass
+    glassFloorPart.Transparency = 0.5
+    glassFloorPart.Color = Color3.fromRGB(150, 220, 255)
+    glassFloorPart.Parent = workspace
+    
+    glassFloorPart.CFrame = CFrame.new(hrp.Position - Vector3.new(0, 3.5, 0))
+end
+
+local function updateGlassFloor()
+    if glassFloorActive then
+        if not glassFloorPart or not glassFloorPart.Parent then
+            createGlassFloor()
+        end
+        
+        if not glassFloorConnection then
+            glassFloorConnection = RunService.RenderStepped:Connect(function()
+                local char = LocalPlayer.Character
+                local hrp = char and char:FindFirstChild("HumanoidRootPart")
+                if hrp and glassFloorPart and glassFloorPart.Parent then
+                    glassFloorPart.CFrame = CFrame.new(hrp.Position - Vector3.new(0, 3.5, 0))
+                end
+            end)
+        end
+    else
+        if glassFloorConnection then
+            glassFloorConnection:Disconnect()
+            glassFloorConnection = nil
+        end
+        if glassFloorPart and glassFloorPart.Parent then
+            glassFloorPart:Destroy()
+            glassFloorPart = nil
+        end
+    end
+end
+
+GlassFloorToggleBtn.MouseButton1Click:Connect(function()
+    glassFloorActive = not glassFloorActive
+    if glassFloorActive then
+        GlassFloorToggleBtn.Text = "🪞 Tấm Kính Dưới Chân: ON"
+        GlassFloorToggleBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        createGlassFloor()
+    else
+        GlassFloorToggleBtn.Text = "🪞 Tấm Kính Dưới Chân: OFF"
+        GlassFloorToggleBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+    end
+    updateGlassFloor()
+end)
+
+---------------------------------------------------------
+-- LOGIC XUYÊN TƯỜNG HƯỚNG THẲNG (THÊM MỚI)
+---------------------------------------------------------
+local function enableDirectionalNoclip()
+    if directionalNoclipConnection then
+        directionalNoclipConnection:Disconnect()
+        directionalNoclipConnection = nil
+    end
+    
+    directionalNoclipConnection = RunService.Stepped:Connect(function()
+        local char = LocalPlayer.Character
+        if not char then return end
+        
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+        
+        local hrp = char:FindFirstChild("HumanoidRootPart")
+        if hrp and UserInputService:IsKeyboardConnected() then
+            local moveDirection = Vector3.zero
+            local speed = tonumber(P_SpeedBox.Text) or 100
+            local dt = 0.016
+            
+            if UserInputService:IsKeyDown(Enum.KeyCode.W) then
+                moveDirection = moveDirection + hrp.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.S) then
+                moveDirection = moveDirection - hrp.CFrame.LookVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.A) then
+                moveDirection = moveDirection - hrp.CFrame.RightVector
+            end
+            if UserInputService:IsKeyDown(Enum.KeyCode.D) then
+                moveDirection = moveDirection + hrp.CFrame.RightVector
+            end
+            
+            if moveDirection.Magnitude > 0 then
+                moveDirection = moveDirection.Unit * speed * dt
+                hrp.CFrame = CFrame.new(hrp.Position + moveDirection)
+            end
+        end
+    end)
+end
+
+local function disableDirectionalNoclip()
+    if directionalNoclipConnection then
+        directionalNoclipConnection:Disconnect()
+        directionalNoclipConnection = nil
+    end
+    
+    if not flyUpActive and not flyDownActive and not isFlying and not followPlayerActive then
+        local char = LocalPlayer.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    if part.Name == "HumanoidRootPart" then
+                        part.CanCollide = false
+                    else
+                        part.CanCollide = true
+                    end
+                end
+            end
+        end
+    end
+end
+
+DirectionalNoclipBtn.MouseButton1Click:Connect(function()
+    directionalNoclipActive = not directionalNoclipActive
+    if directionalNoclipActive then
+        DirectionalNoclipBtn.Text = "🔮 Xuyên Tường Thẳng: ON"
+        DirectionalNoclipBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+        enableDirectionalNoclip()
+    else
+        DirectionalNoclipBtn.Text = "🔮 Xuyên Tường Thẳng: OFF"
+        DirectionalNoclipBtn.BackgroundColor3 = Color3.fromRGB(220, 225, 235)
+        disableDirectionalNoclip()
+    end
+end)
+
+---------------------------------------------------------
+-- LOGIC BAY LÊN XUYÊN TƯỜNG (THÊM MỚI)
+---------------------------------------------------------
+local function startFlyUp()
+    flyUpActive = true
+    FlyUpBtn.Text = "⬆️ ĐANG BAY LÊN... (Nhấn để dừng)"
+    FlyUpBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+    
+    if flyUpConnection then flyUpConnection:Disconnect() end
+    
+    local char = LocalPlayer.Character
+    if char then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+    
+    flyUpConnection = RunService.Heartbeat:Connect(function(dt)
+        if not flyUpActive then return end
+        
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local speed = tonumber(FlyVerticalSpeedBox.Text) or 50
+            hrp.CFrame = CFrame.new(hrp.Position + Vector3.new(0, speed * dt, 0))
+        end
+    end)
+end
+
+local function stopFlyUp()
+    flyUpActive = false
+    FlyUpBtn.Text = "⬆️ BAY LÊN (Xuyên Tường)"
+    FlyUpBtn.BackgroundColor3 = Color3.fromRGB(100, 200, 255)
+    
+    if flyUpConnection then
+        flyUpConnection:Disconnect()
+        flyUpConnection = nil
+    end
+    
+    if not directionalNoclipActive and not flyDownActive and not isFlying and not followPlayerActive then
+        local char = LocalPlayer.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    if part.Name == "HumanoidRootPart" then
+                        part.CanCollide = false
+                    else
+                        part.CanCollide = true
+                    end
+                end
+            end
+        end
+    end
+end
+
+---------------------------------------------------------
+-- LOGIC BAY XUỐNG XUYÊN TƯỜNG (THÊM MỚI)
+---------------------------------------------------------
+local function startFlyDown()
+    flyDownActive = true
+    FlyDownBtn.Text = "⬇️ ĐANG BAY XUỐNG... (Nhấn để dừng)"
+    FlyDownBtn.BackgroundColor3 = Color3.fromRGB(255, 100, 100)
+    
+    if flyDownConnection then flyDownConnection:Disconnect() end
+    
+    local char = LocalPlayer.Character
+    if char then
+        for _, part in pairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    end
+    
+    flyDownConnection = RunService.Heartbeat:Connect(function(dt)
+        if not flyDownActive then return end
+        
+        local char = LocalPlayer.Character
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            local speed = tonumber(FlyVerticalSpeedBox.Text) or 50
+            hrp.CFrame = CFrame.new(hrp.Position - Vector3.new(0, speed * dt, 0))
+        end
+    end)
+end
+
+local function stopFlyDown()
+    flyDownActive = false
+    FlyDownBtn.Text = "⬇️ BAY XUỐNG (Xuyên Tường)"
+    FlyDownBtn.BackgroundColor3 = Color3.fromRGB(255, 150, 50)
+    
+    if flyDownConnection then
+        flyDownConnection:Disconnect()
+        flyDownConnection = nil
+    end
+    
+    if not directionalNoclipActive and not flyUpActive and not isFlying and not followPlayerActive then
+        local char = LocalPlayer.Character
+        if char then
+            for _, part in pairs(char:GetDescendants()) do
+                if part:IsA("BasePart") then
+                    if part.Name == "HumanoidRootPart" then
+                        part.CanCollide = false
+                    else
+                        part.CanCollide = true
+                    end
+                end
+            end
+        end
+    end
+end
+
+FlyUpBtn.MouseButton1Click:Connect(function()
+    if flyUpActive then
+        stopFlyUp()
+    else
+        if flyDownActive then stopFlyDown() end
+        startFlyUp()
+    end
+end)
+
+FlyDownBtn.MouseButton1Click:Connect(function()
+    if flyDownActive then
+        stopFlyDown()
+    else
+        if flyUpActive then stopFlyUp() end
+        startFlyDown()
+    end
+end)
+
+---------------------------------------------------------
 -- CƠ CHẾ BAY TỚI MỤC TIÊU (TWEEN FLY)
 ---------------------------------------------------------
 local function tweenToTarget(hrp, targetCFrame, flySpeed)
@@ -2177,6 +2560,8 @@ stopFly = function()
     stopRequested = true
     if currentTween then currentTween:Cancel() end
     isFlying = false
+    stopFlyUp()
+    stopFlyDown()
     updateNoclipState()
     updatePlayerList()
     updateSavedList()
@@ -2235,18 +2620,15 @@ startFly = function(mode, targetObj)
     local oldGravity = workspace.Gravity
     workspace.Gravity = 0
 
-    -- Bước 1: Bay vọt lên không trung
     local skyPos = hrp.Position + Vector3.new(0, flyHeight, 0)
     local ok1 = tweenToTarget(hrp, CFrame.new(skyPos), flySpeed)
 
-    -- Bước 2: Bay ngang tới vị trí mục tiêu
     if ok1 and not stopRequested then
         local dest = getTargetPos()
         if dest then
             local overhead = dest + Vector3.new(0, flyHeight, 0)
             local ok2 = tweenToTarget(hrp, CFrame.new(overhead), flySpeed)
 
-            -- Bước 3: Đáp thẳng xuống vị trí đích
             if ok2 and not stopRequested then
                 dest = getTargetPos()
                 if dest then
@@ -2270,12 +2652,17 @@ end
 ---------------------------------------------------------
 CloseBtn.MouseButton1Click:Connect(function()
     stopFollow()
+    stopFlyUp()
+    stopFlyDown()
+    disableDirectionalNoclip()
     updateNoclipState()
     removeAllESP()
     removeAllLocESP()
     removeAllWallESP()
 
-    -- Xóa các tường đã tạo khi thoát
+    glassFloorActive = false
+    updateGlassFloor()
+
     for _, item in ipairs(spawnedWalls) do
         if item.part and item.part.Parent then item.part:Destroy() end
     end
@@ -2291,6 +2678,13 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe and input.KeyCode == Enum.KeyCode.RightControl then
         setMenuVisible(not MainFrame.Visible)
     end
+end)
+
+LocalPlayer.CharacterAdded:Connect(function()
+    task.wait(0.5)
+    if glowActive then updateGlow() end
+    if glassFloorActive then createGlassFloor() updateGlassFloor() end
+    if directionalNoclipActive then enableDirectionalNoclip() end
 end)
 
 print("✅ Banana Fly Script đã tải hoàn tất!")
