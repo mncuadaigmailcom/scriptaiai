@@ -1,7 +1,7 @@
 --[[
     FLY TO PLAYER, SAVED LOCATIONS & TRANSPARENT WALL CREATOR
-    - NÂNG CẤP: TÍNH NĂNG XUYÊN TƯỜNG CÓ THẢM KÍNH TRONG SUỐT BÁM THEO DƯỚI CHÂN
-    - TỰ ĐỘNG HIỂN THỊ 3 NÚT ĐIỀU KHIỂN (BAY LÊN, BAY XUỐNG, TẮT) TRÊN MÀN HÌNH
+    - NÂNG CẤP: BỔ SUNG TÍNH NĂNG XUYÊN TƯỜNG TIẾN PHÍA TRƯỚC (NẰM GIỮA BAY LÊN & BAY XUỐNG)
+    - TỰ ĐỘNG HIỂN THỊ 4 NÚT ĐIỀU KHIỂN (BAY LÊN, TIẾN TRƯỚC, BAY XUỐNG, TẮT) TRÊN MÀN HÌNH
     - TÙY CHỈNH KÍCH THƯỚC THẢM KÍNH (DÀI, DÀY, RỘNG)
     - GIỮ NGUYÊN TOÀN BỘ CÁC TÍNH NĂNG: FLY PLAYER/LOCATIONS/WALL, ESP REALTIME, WALL CREATOR
 --]]
@@ -33,6 +33,7 @@ local standaloneNoclipActive = false
 local noclipCarpetPart = nil
 local noclipHeight = 0
 local isNoclipUpHeld = false
+local isNoclipForwardHeld = false -- NÚT TIẾN TRƯỚC MỚI
 local isNoclipDownHeld = false
 
 -- Follow / Bu Người Variables
@@ -189,8 +190,8 @@ CloseBtn.Parent = MainFrame
 ---------------------------------------------------------
 local NoclipHUD = Instance.new("Frame")
 NoclipHUD.Name = "NoclipControlHUD"
-NoclipHUD.Size = UDim2.new(0, 110, 0, 115)
-NoclipHUD.Position = UDim2.new(0.85, -55, 0.4, 0)
+NoclipHUD.Size = UDim2.new(0, 120, 0, 145) -- Mở rộng khung để chứa nút Tiến Trước
+NoclipHUD.Position = UDim2.new(0.85, -60, 0.4, 0)
 NoclipHUD.BackgroundColor3 = Color3.fromRGB(30, 35, 45)
 NoclipHUD.BackgroundTransparency = 0.3
 NoclipHUD.BorderColor3 = Color3.fromRGB(255, 255, 255)
@@ -206,15 +207,15 @@ HudCorner.Parent = NoclipHUD
 local HudTitle = Instance.new("TextLabel")
 HudTitle.Size = UDim2.new(1, 0, 0, 20)
 HudTitle.BackgroundTransparency = 1
-HudTitle.Text = "👻 THẢM KÍNH"
+HudTitle.Text = "👻 THẢM KÍNH NOCLIP"
 HudTitle.TextColor3 = TEXT_LIGHT
 HudTitle.Font = Enum.Font.SourceSansBold
 HudTitle.TextSize = 10
 HudTitle.Parent = NoclipHUD
 
--- Nút Bay Lên
+-- 1. Nút Bay Lên
 local HudUpBtn = Instance.new("TextButton")
-HudUpBtn.Size = UDim2.new(0.9, 0, 0, 26)
+HudUpBtn.Size = UDim2.new(0.9, 0, 0, 24)
 HudUpBtn.Position = UDim2.new(0.05, 0, 0, 22)
 HudUpBtn.BackgroundColor3 = COLOR_GREEN
 HudUpBtn.BackgroundTransparency = 0.2
@@ -228,10 +229,26 @@ local UpCorner = Instance.new("UICorner")
 UpCorner.CornerRadius = UDim.new(0, 4)
 UpCorner.Parent = HudUpBtn
 
--- Nút Bay Xuống
+-- 2. Nút Tiến Phía Trước (Xuyên Tường Tới Trước) - NẰM Ở GIỮA
+local HudForwardBtn = Instance.new("TextButton")
+HudForwardBtn.Size = UDim2.new(0.9, 0, 0, 24)
+HudForwardBtn.Position = UDim2.new(0.05, 0, 0, 50)
+HudForwardBtn.BackgroundColor3 = Color3.fromRGB(240, 150, 20) -- Màu Cam Nổi Bật
+HudForwardBtn.BackgroundTransparency = 0.2
+HudForwardBtn.Text = "⏩ Tiến Phía Trước"
+HudForwardBtn.TextColor3 = TEXT_LIGHT
+HudForwardBtn.Font = Enum.Font.SourceSansBold
+HudForwardBtn.TextSize = 11
+HudForwardBtn.Parent = NoclipHUD
+
+local ForwardCorner = Instance.new("UICorner")
+ForwardCorner.CornerRadius = UDim.new(0, 4)
+ForwardCorner.Parent = HudForwardBtn
+
+-- 3. Nút Bay Xuống
 local HudDownBtn = Instance.new("TextButton")
-HudDownBtn.Size = UDim2.new(0.9, 0, 0, 26)
-HudDownBtn.Position = UDim2.new(0.05, 0, 0, 52)
+HudDownBtn.Size = UDim2.new(0.9, 0, 0, 24)
+HudDownBtn.Position = UDim2.new(0.05, 0, 0, 78)
 HudDownBtn.BackgroundColor3 = WATER_BLUE
 HudDownBtn.BackgroundTransparency = 0.2
 HudDownBtn.Text = "⬇️ Bay Xuống"
@@ -244,10 +261,10 @@ local DownCorner = Instance.new("UICorner")
 DownCorner.CornerRadius = UDim.new(0, 4)
 DownCorner.Parent = HudDownBtn
 
--- Nút Tắt Noclip
+-- 4. Nút Tắt Noclip
 local HudOffBtn = Instance.new("TextButton")
 HudOffBtn.Size = UDim2.new(0.9, 0, 0, 24)
-HudOffBtn.Position = UDim2.new(0.05, 0, 0, 84)
+HudOffBtn.Position = UDim2.new(0.05, 0, 0, 110)
 HudOffBtn.BackgroundColor3 = Color3.fromRGB(220, 50, 50)
 HudOffBtn.BackgroundTransparency = 0.2
 HudOffBtn.Text = "❌ Tắt Xuyên Tường"
@@ -1730,10 +1747,14 @@ HudOffBtn.MouseButton1Click:Connect(function()
     toggleStandaloneNoclip(false)
 end)
 
--- Sự kiện nhấn giữ Bay Lên / Bay Xuống trên HUD
+-- Sự kiện nhấn giữ Bay Lên / Tiến Trước / Bay Xuống trên HUD
 HudUpBtn.MouseButton1Down:Connect(function() isNoclipUpHeld = true end)
 HudUpBtn.MouseButton1Up:Connect(function() isNoclipUpHeld = false end)
 HudUpBtn.MouseLeave:Connect(function() isNoclipUpHeld = false end)
+
+HudForwardBtn.MouseButton1Down:Connect(function() isNoclipForwardHeld = true end)
+HudForwardBtn.MouseButton1Up:Connect(function() isNoclipForwardHeld = false end)
+HudForwardBtn.MouseLeave:Connect(function() isNoclipForwardHeld = false end)
 
 HudDownBtn.MouseButton1Down:Connect(function() isNoclipDownHeld = true end)
 HudDownBtn.MouseButton1Up:Connect(function() isNoclipDownHeld = false end)
@@ -1745,6 +1766,13 @@ HudUpBtn.InputBegan:Connect(function(input)
 end)
 HudUpBtn.InputEnded:Connect(function(input)
     if input.UserInputType == Enum.UserInputType.Touch then isNoclipUpHeld = false end
+end)
+
+HudForwardBtn.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then isNoclipForwardHeld = true end
+end)
+HudForwardBtn.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch then isNoclipForwardHeld = false end
 end)
 
 HudDownBtn.InputBegan:Connect(function(input)
@@ -1761,13 +1789,25 @@ RunService.Heartbeat:Connect(function(dt)
         local hrp = char and char:FindFirstChild("HumanoidRootPart")
         if hrp then
             local vertSpeed = 25 -- Tốc độ nâng/hạ thảm
+            local forwardSpeed = 35 -- Tốc độ đẩy nhân vật tiến phía trước qua tường
 
+            -- Xử lý Bay Lên / Bay Xuống
             if isNoclipUpHeld then
                 noclipHeight = noclipHeight + (vertSpeed * dt)
                 hrp.CFrame = CFrame.new(hrp.Position.X, noclipHeight + 3.2, hrp.Position.Z)
             elseif isNoclipDownHeld then
                 noclipHeight = noclipHeight - (vertSpeed * dt)
                 hrp.CFrame = CFrame.new(hrp.Position.X, noclipHeight + 3.2, hrp.Position.Z)
+            end
+
+            -- Xử lý Xuyên Tường Tiến Phía Trước (Bị đẩy thẳng về trước)
+            if isNoclipForwardHeld then
+                local lookVector = hrp.CFrame.LookVector
+                local moveDir = Vector3.new(lookVector.X, 0, lookVector.Z).Unit
+                if moveDir.Magnitude > 0 then
+                    local newPos = hrp.Position + (moveDir * forwardSpeed * dt)
+                    hrp.CFrame = CFrame.new(newPos, newPos + lookVector)
+                end
             end
 
             local sizeX = tonumber(CarpetLenBox.Text) or 6
@@ -2309,7 +2349,7 @@ SavePosBtn.MouseButton1Click:Connect(function()
     end
 end)
 
-RefreshBtn.MouseButton1Click:Connect(updatePlayerList)
+RefreshBtn.MouseButton1Click(updatePlayerList)
 SearchBox:GetPropertyChangedSignal("Text"):Connect(updatePlayerList)
 
 Players.PlayerAdded:Connect(function(plr)
@@ -2528,4 +2568,4 @@ UserInputService.InputBegan:Connect(function(input, gpe)
     if not gpe and input.KeyCode == Enum.KeyCode.RightControl then
         setMenuVisible(not MainFrame.Visible)
     end
-end) 
+end)
