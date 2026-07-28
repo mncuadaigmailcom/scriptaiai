@@ -1,6 +1,6 @@
 --[[
     FLY TO PLAYER, SAVED LOCATIONS & TRANSPARENT WALL CREATOR
-    - NÂNG CẤP BAY THẲNG: BAY VỌT THẲNG LÊN -> BAY THẲNG NGANG TRÊN TRỜI -> ĐÁP THẲNG ĐỨNG 90 DEGREES XUỐNG MỤC TIÊU
+    - NÂNG CẤP NOCLIP (XUYÊN TƯỜNG): TỰ ĐỘNG BẬT KHI BAY/BU NGƯỜI VÀ TỰ ĐỘNG TẮT KHI DỪNG HOẶC ĐẾN NƠI.
     - GIỮ NGUYÊN TOÀN BỘ TÍNH NĂNG: DRAG HANDLE, RESIZE 4 GÓC, ESP REALTIME, WALL CREATOR, GLOW, TRỤ VISUAL
 --]]
 
@@ -87,7 +87,7 @@ local COLOR_DEAD = Color3.fromRGB(230, 30, 30)
 local TEXT_DARK = Color3.fromRGB(15, 15, 25)
 local TEXT_LIGHT = Color3.fromRGB(255, 255, 255)
 
--- UI Construction với pcall để tránh lỗi
+-- UI Construction
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Name = "FlyBananaCatResizableSplitter"
 ScreenGui.ResetOnSpawn = false
@@ -1402,7 +1402,7 @@ LocalPlayer.CharacterAdded:Connect(function()
 end)
 
 ---------------------------------------------------------
--- LOGIC CƠ BẢN & XỬ LÝ VA CHẠM
+-- QUẢN LÝ NOCLIP (XUYÊN TƯỜNG) NÂNG CẤP CHUẨN XÁC
 ---------------------------------------------------------
 local startFly
 local stopFly
@@ -1437,6 +1437,7 @@ local function isPlayerDeadOrKnocked(plr)
     return false
 end
 
+-- KHÔI PHỤC VA CHẠM VẬT LÝ VỀ TRẠNG THÁI GỐC (TẮT XUYÊN TƯỜNG)
 local function resetCharacterPhysics()
     if noclipConnection then
         noclipConnection:Disconnect()
@@ -1446,6 +1447,7 @@ local function resetCharacterPhysics()
     local char = LocalPlayer.Character
     if not char then return end
 
+    -- Khôi phục lại va chạm chuẩn của Roblox
     for _, part in pairs(char:GetDescendants()) do
         if part:IsA("BasePart") then
             if part.Name == "HumanoidRootPart" then
@@ -1463,6 +1465,7 @@ local function resetCharacterPhysics()
     end
 end
 
+-- BẬT / TẮT XUYÊN TƯỜNG THEO TRẠNG THÁI BAY
 local function updateNoclipState()
     local shouldNoclip = followPlayerActive or isFlying
 
@@ -1485,7 +1488,7 @@ local function updateNoclipState()
 end
 
 ---------------------------------------------------------
--- CƠ CHẾ TWEEN BAY BAY NÂNG CẤP (TWEEN BASE)
+-- CƠ CHẾ TWEEN BAY BASE
 ---------------------------------------------------------
 local function tweenToTarget(hrp, targetCFrame, flySpeed)
     if stopRequested then return false end
@@ -1514,13 +1517,16 @@ local function tweenToTarget(hrp, targetCFrame, flySpeed)
 end
 
 ---------------------------------------------------------
--- CƠ CHẾ BAY THẲNG DỰA TRÊN QUỸ ĐẠO CHUẨN 3 BƯỚC
+-- HỆ THỐNG BAY TỚI TỌA ĐỘ / NGƯỜI CHƠI / TƯỜNG KÍNH
 ---------------------------------------------------------
 stopFly = function()
     stopRequested = true
     if currentTween then currentTween:Cancel() end
     isFlying = false
-    updateNoclipState()
+    
+    workspace.Gravity = 196.2
+    updateNoclipState() -- TỰ ĐỘNG TẮT XUYÊN TƯỜNG
+
     updatePlayerList()
     updateSavedList()
     updateWallList()
@@ -1575,7 +1581,7 @@ startFly = function(mode, targetObj)
     updateSavedList()
     updateWallList()
 
-    updateNoclipState()
+    updateNoclipState() -- TỰ ĐỘNG BẬT XUYÊN TƯỜNG KHI BẮT ĐẦU BAY
     local oldGravity = workspace.Gravity
     workspace.Gravity = 0
 
@@ -1593,7 +1599,6 @@ startFly = function(mode, targetObj)
             local destPos = liveCFrame.Position
             local overheadPos = Vector3.new(destPos.X, skyPos.Y, destPos.Z)
             
-            -- Hướng bay ngang thẳng tới overheadPos
             local horizontalLook = (overheadPos - skyPos).Magnitude > 0.1 and (overheadPos - skyPos).Unit or currentLook
             local ok2 = tweenToTarget(hrp, CFrame.new(overheadPos, overheadPos + horizontalLook), flySpeed)
 
@@ -1603,13 +1608,11 @@ startFly = function(mode, targetObj)
                 if liveCFrame then
                     local targetFinalCFrame
                     if mode == "Player" then
-                        -- Giữ khoảng cách 2 studs phía trước/mặt đối phương
                         targetFinalCFrame = liveCFrame * CFrame.new(0, 0, 2)
                     else
                         targetFinalCFrame = liveCFrame
                     end
                     
-                    -- Đáp thẳng đứng xuống
                     tweenToTarget(hrp, targetFinalCFrame, flySpeed)
                 end
             end
@@ -1618,7 +1621,7 @@ startFly = function(mode, targetObj)
 
     workspace.Gravity = oldGravity
     isFlying = false
-    updateNoclipState()
+    updateNoclipState() -- TỰ ĐỘNG TẮT XUYÊN TƯỜNG KHI BAY TỚI NƠI HOẶC HỦY BỎ
     
     updatePlayerList()
     updateSavedList()
@@ -1626,7 +1629,7 @@ startFly = function(mode, targetObj)
 end
 
 ---------------------------------------------------------
--- HỆ THỐNG BU NGƯỜI CHƠI (TWEEN TỰ ĐỘNG NÉ VẬT CẢN)
+-- HỆ THỐNG BU NGƯỜI CHƠI (TỰ ĐỘNG TẮT XUYÊN TƯỜNG KHI TẮT BU)
 ---------------------------------------------------------
 stopFollow = function()
     followPlayerActive = false
@@ -1641,7 +1644,7 @@ stopFollow = function()
     end
 
     workspace.Gravity = 196.2
-    updateNoclipState()
+    updateNoclipState() -- TỰ ĐỘNG TẮT XUYÊN TƯỜNG KHI TẮT BU NGƯỜI
 
     if FollowPlayerBtn then
         FollowPlayerBtn.Text = "🧲 Bu Người Chơi: OFF"
@@ -1662,11 +1665,13 @@ startFollow = function()
     FollowPlayerBtn.Text = "🧲 Bu Người Chơi: ON"
     FollowPlayerBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
 
-    updateNoclipState()
+    updateNoclipState() -- TỰ ĐỘNG BẬT XUYÊN TƯỜNG KHI BẬT BU NGƯỜI
 
     task.spawn(function()
         local oldGravity = workspace.Gravity
         workspace.Gravity = 0
+
+        local hasArrived = false
 
         while followPlayerActive and not stopRequested and selectedPlayer and selectedPlayer.Character do
             local myChar = LocalPlayer.Character
@@ -1677,20 +1682,17 @@ startFollow = function()
 
             local flyHeight = tonumber(P_HeightBox.Text) or 150
             local flySpeed = tonumber(P_SpeedBox.Text) or 100
+            local targetCFrame = targetHrp.CFrame * CFrame.new(0, 0, 2)
 
-            local dist = (myHrp.Position - targetHrp.Position).Magnitude
-
-            if dist > 15 then
-                -- Nếu ở xa: Thực hiện đường bay thẳng 3 bước
+            if not hasArrived then
+                -- LẦN ĐẦU: BAY TRÊN TRỜI
                 local startPos = myHrp.Position
                 local skyPos = Vector3.new(startPos.X, startPos.Y + flyHeight, startPos.Z)
                 local currentLook = myHrp.CFrame.LookVector
 
-                -- Bước 1: Vọt thẳng đứng lên
                 local ok1 = tweenToTarget(myHrp, CFrame.new(skyPos, skyPos + currentLook), flySpeed)
                 if not ok1 or not followPlayerActive or stopRequested then break end
 
-                -- Bước 2: Bay ngang tới trên đầu
                 targetHrp = getTargetPart(selectedPlayer)
                 if not targetHrp then break end
                 local destPos = targetHrp.Position
@@ -1698,18 +1700,22 @@ startFollow = function()
                 local ok2 = tweenToTarget(myHrp, CFrame.new(overheadPos, overheadPos + (destPos - startPos).Unit), flySpeed)
                 if not ok2 or not followPlayerActive or stopRequested then break end
 
-                -- Bước 3: Đáp thẳng đứng xuống
                 targetHrp = getTargetPart(selectedPlayer)
                 if not targetHrp then break end
                 local ok3 = tweenToTarget(myHrp, targetHrp.CFrame * CFrame.new(0, 0, 2), flySpeed)
                 if not ok3 or not followPlayerActive or stopRequested then break end
+
+                hasArrived = true
             else
-                -- Khi đã ở sát đối phương: Bám sát thẳng theo vị trí
-                local ok = tweenToTarget(myHrp, targetHrp.CFrame * CFrame.new(0, 0, 2), flySpeed)
-                if not ok or not followPlayerActive or stopRequested then break end
+                -- KHI ĐỊCH DI CHUYỂN: BAY THẲNG TRỰC TIẾP TỚI ĐỊCH
+                local dist = (myHrp.Position - targetCFrame.Position).Magnitude
+                if dist > 1.5 then
+                    local ok = tweenToTarget(myHrp, targetCFrame, flySpeed)
+                    if not ok or not followPlayerActive or stopRequested then break end
+                end
             end
 
-            task.wait(0.1)
+            task.wait(0.05)
         end
 
         workspace.Gravity = oldGravity
@@ -2232,6 +2238,13 @@ end)
 
 P_HeightBox:GetPropertyChangedSignal("Text"):Connect(function()
     if showHeightVisual then updateHeightVisual() end
+end)
+
+-- TỰ ĐỘNG KHÔI PHỤC VẬT LÝ KHI RESPAWN
+LocalPlayer.CharacterAdded:Connect(function(char)
+    isFlying = false
+    followPlayerActive = false
+    updateNoclipState()
 end)
 
 ---------------------------------------------------------
